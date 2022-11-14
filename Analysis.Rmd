@@ -1,7 +1,7 @@
 ---
-title: "Graphs for Manuscript: Priority effects and season length shape long-term competition dynamics"
-author: "Heng-Xing Zou, Volker H. W. Rudolf"
-date: "3/25/2021"
+title: "Analysis for Manuscript: \nStage-mediated priority effects and species life history shape long-term competition dynamics"
+author: "Heng-Xing Zou, Sebastian J. Schreiber, Volker H. W. Rudolf"
+date: "10/20/2022"
 output: html_document
 ---
 
@@ -11,704 +11,677 @@ output: html_document
 - Before running, please make sure that this file is under the same folder with `Functions.R`.
 - Some chunks may take very long time to run.
 - Some chunks require changing certain places in `Functions.R`. Please follow instructions for those specific chunks.
-- "Season" and "cycle" means the same and are used interchangeably in this document, `Functions.R` and the manuscript.
-- `deltp` refers to $\Delta s$ in the manuscript.
 - Please also read `IMPORTANT NOTES` at the beginning of `Function.R`.
-- Please contact the author (Heng-Xing Zou) for questions or suggestions.
+- Please contact the author [Heng-Xing Zou](hz70@rice.edu) for questions or suggestions.
 
 ```{r setup, include=FALSE}
 
 knitr::opts_chunk$set(echo = TRUE)
 source("Functions.R")
 
-```
-
-# Invasion Analysis
-
-This part examines competition outcome between two species with different relative arrival times ($\Delta p$) and season lengths ($T$) by numeric simulation (see **Methods** and **Supporting Information, Section3**). $\Delta s$ does not vary seasonally (is deterministic). We used a range of intraspecific competition coefficients. This chunk produces left panels of **Figure 3** and **Figure S9**. Note that these chunks take a long time to run. See instructions in `Functions.R` on how to change `generate_amat()` to produce results with stage-mediated interspecific competition (trait-mediated priority effects; **Figure 3A**, **3B**, left panel; **Figure S11A** and **S11B**), without stage-mediated interspecific competition (numeric priority effects only; **Figure 3C**, left panel; **Figure S11C**, **S11D**), and with both stage-mediated intra- and interspecific competition (See **Supporting Information**, **Section 1**; **Figure S2**). Change adult survival in `para` to generate phase diagrams without overlapping generations (**Figure S13**).
-
-```{r}
-
-B = 0.225
-scal = 0.85
-xmid = 0
-
-deltp_lst = seq(-5, 5, 1)
-init_pop = data.frame("N1" = c(3, 0, 0, 0, 0, 0), "N2" = c(3, 0, 0, 0, 0, 0))
-para = data.frame("para1" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6), "para2" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6))
-# Use the following parameters to examine the scenario without overlapping generations
-# para = data.frame("para1" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0), "para2" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0))
-surv = c(0.8, 0.8)
-s = 6
-
-cycle_lens = c(12, 18, 24, 36, 48, 60, 96, 120, 240)
-
-mat_inv_45 = numeric_phase_invgrowth(para, init_pop, c(B, 0.08, 0.10), deltp_lst, cycle_lens)
-mat_inv_66 = numeric_phase_invgrowth(para, init_pop, c(B, 0.12, 0.12), deltp_lst, cycle_lens)
-mat_inv_67 = numeric_phase_invgrowth(para, init_pop, c(B, 0.12, 0.14), deltp_lst, cycle_lens)
-mat_inv_78 = numeric_phase_invgrowth(para, init_pop, c(B, 0.14, 0.16), deltp_lst, cycle_lens)
-mat_inv_99 = numeric_phase_invgrowth(para, init_pop, c(B, 0.18, 0.18), deltp_lst, cycle_lens)
-mat_inv_1515 = numeric_phase_invgrowth(para, init_pop, c(B, 0.30, 0.30), deltp_lst, cycle_lens)
-
-mat_inv_45 %>% melt() %>% rename(deltp = Var1, cycle_len = Var2) %>% 
-  ggplot(aes(x = deltp, y = cycle_len, fill = factor(value))) + geom_tile(color = "white") + theme_bw() + 
-  scale_x_continuous(name = "Relative arrival time", breaks = seq(1, 11, 1), label = deltp_lst) +
-  scale_y_continuous(name = "Season length", breaks = seq(1, length(cycle_lens), 1), label = cycle_lens) +
-  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme) + 
-  theme(panel.grid.major = element_blank()) + ggtitle("A") + 
-  theme(axis.text = element_text(size = 15), axis.title.y = element_text(size = 20), 
-        axis.ticks = element_blank(), axis.title.x = element_blank(), 
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20))
-
-mat_inv_66 %>% melt() %>% rename(deltp = Var1, cycle_len = Var2) %>% 
-  ggplot(aes(x = deltp, y = cycle_len, fill = factor(value))) + geom_tile(color = "white") + theme_bw() + 
-  scale_x_continuous(name = "Relative arrival time", breaks = seq(1, 11, 1), label = deltp_lst) +
-  scale_y_continuous(name = "Season length", breaks = seq(1, length(cycle_lens), 1), label = cycle_lens) +
-  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme) + 
-  theme(panel.grid.major = element_blank())  + ggtitle("A") +
-  theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20), axis.ticks = element_blank(), 
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20)) + 
-  annotate("rect", xmin = 3.5, xmax = 8.5, ymin = 0.5, ymax = 8.5, alpha = 0, fill = "transparent", color = "black", size = 2)
-
-mat_inv_67 %>% melt() %>% rename(deltp = Var1, cycle_len = Var2) %>% 
-  ggplot(aes(x = deltp, y = cycle_len, fill = factor(value))) + geom_tile(color = "white") + theme_bw() + 
-  scale_x_continuous(name = "Relative arrival time", breaks = seq(1, 11, 1), label = deltp_lst) +
-  scale_y_continuous(name = "Season length", breaks = seq(1, length(cycle_lens), 1), label = cycle_lens) +
-  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme) + 
-  theme(panel.grid.major = element_blank())  + ggtitle("B") +
-  theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20), axis.ticks = element_blank(), 
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20)) + 
-  annotate("rect", xmin = 3.5, xmax = 8.5, ymin = 0.5, ymax = 8.5, alpha = 0, fill = "transparent", color = "black", size = 2)
-
-mat_inv_78 %>% melt() %>% rename(deltp = Var1, cycle_len = Var2) %>% 
-  ggplot(aes(x = deltp, y = cycle_len, fill = factor(value))) + geom_tile(color = "white") + theme_bw() + 
-  scale_x_continuous(name = "Relative arrival time", breaks = seq(1, 11, 1), label = deltp_lst) +
-  scale_y_continuous(name = "Season length", breaks = seq(1, length(cycle_lens), 1), label = cycle_lens) +
-  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme) + 
-  theme(panel.grid.major = element_blank()) + ggtitle("B") + 
-  theme(axis.text = element_text(size = 15), axis.title = element_blank(), axis.ticks = element_blank(), 
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20))
-
-mat_inv_99 %>% melt() %>% rename(deltp = Var1, cycle_len = Var2) %>% 
-  ggplot(aes(x = deltp, y = cycle_len, fill = factor(value))) + geom_tile(color = "white") + theme_bw() + 
-  scale_x_continuous(name = "Relative arrival time", breaks = seq(1, 11, 1), label = deltp_lst) +
-  scale_y_continuous(name = "Season length", breaks = seq(1, length(cycle_lens), 1), label = cycle_lens) +
-  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme) + 
-  theme(panel.grid.major = element_blank()) + 
-  theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20), axis.ticks = element_blank(), 
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20))
-
-mat_inv_1515 %>% melt() %>% rename(deltp = Var1, cycle_len = Var2) %>% 
-  ggplot(aes(x = deltp, y = cycle_len, fill = factor(value))) + geom_tile(color = "white") + theme_bw() + 
-  scale_x_continuous(name = "Relative arrival time", breaks = seq(1, 11, 1), label = deltp_lst) +
-  scale_y_continuous(name = "Season length", breaks = seq(1, length(cycle_lens), 1), label = cycle_lens) +
-  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme) + 
-  theme(panel.grid.major = element_blank()) + 
-  theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20), axis.ticks = element_blank(), 
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20))
-
-```
-
-The following chunk provides code for analytically deriving competition phase diagrams (see **Supporting Information, Section 3**). It produces **Figure S17C** and **S17D**.
-
-```{r}
-
-alt_mat_66 = analytic_phase_invgrowth(para, init_pop, c(B, 0.12, 0.12), deltp_lst, cycle_lens)
-alt_mat_67 = analytic_phase_invgrowth(para, init_pop, c(B, 0.12, 0.14), deltp_lst, cycle_lens)
-
-alt_mat_inv_66 %>% melt() %>% rename(deltp = Var1, cycle_len = Var2) %>% 
-  ggplot(aes(x = deltp, y = cycle_len, fill = factor(value))) + geom_tile(color = "white") + theme_bw() + 
-  scale_x_continuous(name = "Relative arrival time", breaks = seq(1, 11, 1), label = deltp_lst) +
-  scale_y_continuous(name = "Season length", breaks = seq(1, length(cycle_lens), 1), label = cycle_lens) +
-  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Numeric PE"), values = c("#a61b29", "#0eb0c9", "#577C8A")) + 
-  theme(panel.grid.major = element_blank())  + ggtitle("C") +
-  theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20), axis.ticks = element_blank(), 
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20)) + 
-  annotate("rect", xmin = 3.5, xmax = 8.5, ymin = 0.5, ymax = 8.5, alpha = 0, fill = "transparent", color = "black", size = 2)
-
-alt_mat_inv_67 %>% melt() %>% rename(deltp = Var1, cycle_len = Var2) %>% 
-  ggplot(aes(x = deltp, y = cycle_len, fill = factor(value))) + geom_tile(color = "white") + theme_bw() + 
-  scale_x_continuous(name = "Relative arrival time", breaks = seq(1, 11, 1), label = deltp_lst) +
-  scale_y_continuous(name = "Season length", breaks = seq(1, length(cycle_lens), 1), label = cycle_lens) +
-  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme) + 
-  theme(panel.grid.major = element_blank())  + ggtitle("D") +
-  theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20), axis.ticks = element_blank(), 
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20)) + 
-  annotate("rect", xmin = 3.5, xmax = 8.5, ymin = 0.5, ymax = 8.5, alpha = 0, fill = "transparent", color = "black", size = 2)
-
-```
-
-# Change of Vital Rates with Season Length
-
-This part examines change of vital rates (interaction strengths, competition coefficients, adult population and mortality) with different relative arrival time and season lengths. See **Methods** for specific calculations. Most vital rates are averaged within each season or over the whole simulation. 
-
-## Average Interaction Strengths within Seasons
-
-By default, this chunk produces **Figure S10**. Changing `generate_amat()` in `Functions.R` to exclude stage-mediated interspecific competition (numeric priority effects only) produces **Figure S11**.
-
-```{r}
-
-B = 0.225
-scal = 0.85
-xmid = 0
-mean_time = 2
-var = c(0)
-
-init_pop = data.frame("N1" = c(3, 0, 0, 0, 0, 0), "N2" = c(3, 0, 0, 0, 0, 0))
-para = data.frame("para1" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6), "para2" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6))
-alpha = c(B, 0.12, 0.14)
-surv = c(0.8, 0.8)
-s = 6
-n_cycles = 60
-cycle_lens = c(12, 36)
-
-# 1 invades
-result1 = avg_int_incycle(n_cycles, para, init_pop, alpha, mean_time, var, cycle_lens, inv_pop = 0.01, inv_spp = 1)
-
-# 2 invades
-result2 = avg_int_incycle(n_cycles, para, init_pop, alpha, mean_time, var, cycle_lens, inv_pop = 0.01, inv_spp = 1)
-
-plavgint1_1 =
-result1 %>% filter((type == "intra" & species == 1) | (type == "inter" & species == 2)) %>% 
-  ggplot(aes(x = cycle_no, y = avg_int, color = factor(cycle_len))) +
-  geom_line(aes(linetype = type)) + theme_bw() +
-  geom_point(size = 2, alpha = 0.5, aes(shape = type)) + ylab("Average interaction strength") + 
-  theme(panel.grid = element_blank()) + 
-  scale_x_continuous(breaks = seq(1, n_cycles+1, 5), label = seq(0, n_cycles, 5), name = "Seasons") + ylim(0, 0.75) + 
-  scale_color_manual(values = shades_xch_2, guide = "none") + 
-  scale_linetype_manual(name = "Type", labels = c("On other", "On itself"), values = c(1, 2)) +
-  theme(axis.text = element_text(size = 15), axis.title.y = element_text(size = 20), 
-        axis.title.x = element_blank(), axis.ticks.y = element_blank(), plot.title = element_text(size = 20), 
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20)) + ggtitle("A") + 
-  scale_shape_manual(guide = "none", values = c(16, 17))
-
-plavgint2_1 =
-result1 %>% filter((type == "intra" & species == 2) | (type == "inter" & species == 1)) %>% 
-  ggplot(aes(x = cycle_no, y = avg_int, color = factor(cycle_len))) +
-  geom_line(aes(linetype = type)) + theme_bw() +
-  geom_point(size = 2, alpha = 0.5, aes(shape = type)) + ylab("Average interaction strength") + 
-  theme(panel.grid = element_blank()) + 
-  scale_x_continuous(breaks = seq(1, n_cycles+1, 5), label = seq(0, n_cycles, 5), name = "Seasons") + ylim(0, 0.75) + 
-  scale_color_manual(values = shades_kql_2, guide = "none") + 
-  scale_linetype_manual(name = "Type", labels = c("On other", "On itself"), values = c(1, 2)) +
-  theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20), 
-        axis.ticks.y = element_blank(), plot.title = element_text(size = 20), 
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20)) + ggtitle("C") +
-  scale_shape_manual(guide = "none", values = c(16, 17))
-
-plavgint1_2 =
-result2 %>% filter((type == "intra" & species == 1) | (type == "inter" & species == 2)) %>% 
-  ggplot(aes(x = cycle_no, y = avg_int, color = factor(cycle_len))) +
-  geom_line(aes(linetype = type)) + theme_bw() +
-  geom_point(size = 2, alpha = 0.5, aes(shape = type)) + ylab("Average interaction strength") + 
-  theme(panel.grid = element_blank()) + 
-  scale_x_continuous(breaks = seq(1, n_cycles+1, 5), label = seq(0, n_cycles, 5), name = "Seasons") + ylim(0, 0.75) + 
-  scale_color_manual(values = shades_xch_2, guide = "none") + 
-  scale_linetype_manual(name = "Type", labels = c("On other", "On itself"), values = c(1, 2)) +
-  theme(axis.text = element_text(size = 15), axis.title.x = element_text(size = 20), 
-        axis.title.y = element_blank(), axis.ticks.y = element_blank(), plot.title = element_text(size = 20), 
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20)) + ggtitle("D") +
-  scale_shape_manual(guide = "none", values = c(16, 17))
-
-plavgint2_2 =
-result2 %>% filter((type == "intra" & species == 2) | (type == "inter" & species == 1)) %>% 
-  ggplot(aes(x = cycle_no, y = avg_int, color = factor(cycle_len))) +
-  geom_line(aes(linetype = type)) + theme_bw() +
-  geom_point(size = 2, alpha = 0.5, aes(shape = type)) + ylab("Average interaction strength") + 
-  theme(panel.grid = element_blank()) + 
-  scale_x_continuous(breaks = seq(1, n_cycles+1, 5), label = seq(0, n_cycles, 5), name = "Seasons") + ylim(0, 0.75) + 
-  scale_color_manual(name = "Season length", values = shades_kql_2) + 
-  scale_linetype_manual(name = "Type", labels = c("On other", "On itself"), values = c(1, 2)) +
-  theme(axis.text = element_text(size = 15), axis.title = element_blank(), 
-        axis.ticks.y = element_blank(), plot.title = element_text(size = 20), 
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20)) + ggtitle("B")
-
-(plavgint1_1 + plavgint2_2 + plavgint2_1 + plavgint1_2) + plot_layout(ncol = 2, guides = "collect")
-
-```
-
-## Average Overall Interaction Strengths
-
-This chunk produces **Figure 4** in main text.
-
-```{r}
-
-B = 0.225
-scal = 0.85
-xmid = 0
-mean_time = 2
-var = c(0)
-
-init_pop = data.frame("N1" = c(3, 0, 0, 0, 0, 0), "N2" = c(3, 0, 0, 0, 0, 0))
-para = data.frame("para1" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6), "para2" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6))
-alpha = c(B, 0.12, 0.14)
-surv = c(0.8, 0.8)
-s = 6
-n_cycles = 30
-cycle_lens = c(12, 18, 24, 36, 48, 96, 120)
-
-# 1 invades
-result1 = avg_int(n_cycles, para, init_pop, alpha, mean_time, var, cycle_lens, inv_spp = 1)
-
-# 2 invades
-result2 = avg_int(n_cycles, para, init_pop, alpha, mean_time, var, cycle_lens, inv_spp = 2)
-
-plavginto1 =
-result1 %>% ggplot(aes(x = cycle_len, y = avg_int, color = type)) + 
-  geom_point(size = 3, alpha = 0.8, aes(shape = type)) + theme_bw() + 
-  geom_line(aes(linetype = type)) + 
-  scale_color_manual(values = c(color_scheme[1:2], color_scheme[1:2])) + 
-  scale_linetype_manual(values = c(1, 2, 2, 1)) + 
-  theme(panel.grid = element_blank(), axis.text.y = element_text(size = 15), 
-        axis.text.x = element_text(size = 15), axis.title = element_text(size = 20), plot.title = element_text(size = 20),
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20), legend.position = "none") + ggtitle("A") +
-  annotate("text", label = expression(paste(I[11])), x = 105, y = 0.40, size = 7, color = "#a61b29") + 
-  annotate("text", label = expression(paste(I[12])), x = 75, y = 0.12, size = 7, color = "#a61b29") + 
-  annotate("text", label = expression(paste(I[21])), x = 85, y = 0.5, size = 7, color = "#0eb0c9") + 
-  annotate("text", label = expression(paste(I[22])), x = 105, y = 0.1, size = 7, color = "#0eb0c9") + 
-  ylab("Average interaction strength") + 
-  scale_x_continuous(name = "", breaks = cycle_lens, label = cycle_lens) + ylim(0, 1)
-
-plavginto2 =
-result2 %>% ggplot(aes(x = cycle_len, y = avg_int, color = type)) + 
-  geom_point(size = 3, alpha = 0.8, aes(shape = type)) + theme_bw() + 
-  geom_line(aes(linetype = type)) + 
-  scale_color_manual(values = c(color_scheme[1:2], color_scheme[1:2])) + 
-  scale_linetype_manual(values = c(1, 2, 2, 1)) + 
-  theme(panel.grid = element_blank(), axis.text.y = element_text(size = 15), 
-        axis.text.x = element_text(size = 15), axis.title = element_text(size = 20), plot.title = element_text(size = 20),
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20), legend.position = "none") + ggtitle("B") +
-  annotate("text", label = expression(paste(I[11])), x = 105, y = 0.38, size = 7, color = "#a61b29") + 
-  annotate("text", label = expression(paste(I[12])), x = 85, y = 0.15, size = 7, color = "#a61b29") + 
-  annotate("text", label = expression(paste(I[21])), x = 105, y = 0.8, size = 7, color = "#0eb0c9") + 
-  annotate("text", label = expression(paste(I[22])), x = 75, y = 0.04, size = 7, color = "#0eb0c9") + 
-  ylab("Average interaction strength") + 
-  scale_x_continuous(name = "Season Length", breaks = cycle_lens, label = cycle_lens) + ylim(0, 1)
-
-plavginto1 / plavginto2
-
-```
-
-## Average Number of Adults vs. Arrival Time
-
-This chunk is part of the analysis on the counter-intuitive late arrival advantage appeared in phase diagrams (See **Supporting Information**, **Section 2.2**); it produces **Figure S5**.
-
-```{r}
-
-B = 0.225
-scal = 0.85
-xmid = 0
-var = c(0)
-
-init_pop = data.frame("N1" = c(3, 0, 0, 0, 0, 0), "N2" = c(3, 0, 0, 0, 0, 0))
-para = data.frame("para1" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6), "para2" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6))
-alpha = c(B, 0.12, 0.14)
-surv = c(0.8, 0.8)
-s = 6
-
-n_cycles = 20
-cycle_lens = c(18, 36)
-
-avg_adult_tot = tibble()
-for (deltp in 1:5) {
-  out = avg_adult_incycle(n_cycles, para, init_pop, alpha, deltp, var, cycle_lens, inv_spp = 2)
-  out$deltp = rep(deltp, nrow(out))
-  avg_adult_tot = bind_rows(avg_adult_tot, out)
+fig_dir = "/Figures"
+if (!dir.exists(fig_dir)) {
+  dir.create(fig_dir)
 }
 
-avg_adult_tot %>% filter(species == "N1") %>% 
-  ggplot(aes(x = cycle_no, y = population, color = factor(deltp), linetype = factor(cycle_len))) +
-  geom_line() + theme_bw() + geom_point(size = 3, alpha = 0.5, aes(shape = factor(cycle_len))) + ylab("Average adult population") + 
-  theme(panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank()) + 
-  scale_x_continuous(breaks = seq(1, n_cycles+1, 5), label = seq(0, n_cycles, 5), name = "Seasons") + ylim(0, 0.35) + 
-  scale_color_manual(values = shades_xch, name = expression(paste(Delta, p))) + 
-  scale_shape_manual(name = "T", values = c(16, 17)) + 
-  scale_linetype_manual(name = "T", values = c(1, 8)) +
-  theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20), 
-        axis.ticks.y = element_blank(), plot.title = element_text(size = 20), 
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20))
-
 ```
 
-# Stochastic Arrival Time
+# Data Generation
 
-This part includes stochastic simulations, which accounts for the seasonal variation of $\Delta p$. Some analyses in this part are very time-consuming. Although we attempt to capture the generality behind stochastic results, they are still stochastic and there are slight differences with every run, so some outcomes may not be identical to those presented in the manuscript. 
-
-## Long-term Population Dynamics
-
-This chunk produces long-term population dynamics of the two competing species. When there's no seasonal variation of $\Delta p$ (`var = c(0)`; deterministic simulation), it produces **Figure S16**, showing a slow but successful invasion. When there's seasonal variation of $\Delta p$ (`var=c(3)`; stochastic simulation), it produces **Figure S14**, showing the long-term transients that enable coexistence produced by the stochasticity. Note that the provided random seed, when ran for the first time, gives one example that shows coexistence by long-term transient; patterns can be different for multiple runs due to stochasticity.
+Data generation could take a long time. To jumpstart, run the following chunk to load the pre-saved environment.
 
 ```{r}
 
-B = 0.225
-scal = 0.85
-xmid = 0
-mean_time = 1
-var = c(0) # change to c(3) for stochastic simulation
+load("Aug242022.RData")
 
-init_pop = data.frame("N1" = c(3, 0, 0, 0, 0, 0), "N2" = c(3, 0, 0, 0, 0, 0))
-para = data.frame("para1" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6), "para2" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6))
-alpha = c(B, 0.12, 0.14)
-surv = c(0.8, 0.8)
-s = 6
-G = rep(0, (s-1))
-cycle_len = 36
-time = 1000
+```
 
-# Uncomment below for stochastic simulation
-# set.seed(15)
+## Stage-mediated Interspecific Competition
 
-cycles_invade(time, para, init_pop, alpha, mean_time, var, cycle_len, inv_pop = 0.01, inv_spp = 2) %>%
-  pivot_longer(cols = N1:N2, names_to = "species", values_to = "population") %>% 
-  group_by(time, species, variation) %>% summarize(sum(population)) %>% rename(population = `sum(population)`) %>% 
+- Invasion Analysis
+
+Change `generate_amat()` in [Functions.R](Functions.R) accordingly: $\alpha_{11}$ and $\alpha_{22}$ should be constants (`"c"`), $\alpha_{12}$ and $\alpha_{21}$ should be variable (`"v"`).
+
+```{r}
+
+delta_s_lst = seq(-4, 4, 1)
+init_pop = cbind(c(0, 0, 0, 0, 0, 0, 3), c(0, 0, 0, 0, 0, 0, 3))
+para = cbind(c(12, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8), c(12, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8))
+mu = c(0.2, 0.2)
+s = 7
+season_lens = 6*c(2, 4, 8, 16, 20)+1
+n_seasons = 50
+
+# Low intraspecific competition, symmetric
+
+lowintra = invasion_multi(n_seasons, init_pop, para, c(B, 0.10, 0.10), delta_s_lst, var = 0, season_lens)
+
+# Mid intraspecific competition, asymmetric
+
+midintra = invasion_multi(n_seasons, init_pop, para, c(B, 0.10, 0.12), delta_s_lst, var = 0, season_lens)
+
+# High intraspecific competition, symmetric
+
+highintra = invasion_multi(n_seasons, init_pop, para, c(B, 0.12, 0.12), delta_s_lst, var = 0, season_lens)
+
+```
+
+- Calculating ND and RFD
+
+```{r}
+
+nd_rfd = midintra %>% select(inv_i, sensitivity, delta_s, season_len) %>% pivot_wider(names_from = inv_i, values_from = sensitivity) %>%
+  mutate(ND = 1-sqrt(`1`*`2`), RFD = sqrt(`1`/`2`)) %>% 
+  mutate(outcome = ifelse(1-ND < RFD & RFD < 1/(1-ND), "3", 
+                          ifelse(RFD > 1-ND & RFD > 1/(1-ND), "2", 
+                                 ifelse(RFD < 1-ND & RFD < 1/(1-ND), "1", "4"))))
+
+```
+
+- Periodic Environment
+
+```{r}
+
+init_pop = cbind(c(0, 0, 0, 0, 0, 0, 3), c(0, 0, 0, 0, 0, 0, 3))
+para = cbind(c(12, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8), c(12, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8))
+mu = c(0.2, 0.2)
+s = 7
+season_lens = 6*c(2, 4, 8, 16, 20)+1
+n_seasons = 50
+
+delta_s_lst = seq(-2, 2, 1)
+var2 = invasion_multi(n_seasons, init_pop, para, c(B, 0.10, 0.12), delta_s_lst, var = 2, season_lens, periodic = T)
+
+```
+
+## Stage-mediated Interspecific Competition
+
+Change `generate_amat()` in [Functions.R](Functions.R) accordingly: $\alpha_{11}$ and $\alpha_{22}$ should be constants (`"c"`), $\alpha_{12}$ and $\alpha_{21}$ should be variable (`"v"`).
+
+- Invasion Analysis
+
+```{r}
+
+delta_s_lst = seq(-4, 4, 1)
+init_pop = cbind(c(0, 0, 0, 0, 0, 0, 3), c(0, 0, 0, 0, 0, 0, 3))
+para = cbind(c(12, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8), c(12, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8))
+mu = c(0.2, 0.2)
+s = 7
+season_lens = 6*c(2, 4, 8, 16, 20)+1
+n_seasons = 50
+
+# Low intraspecific competition, symmetric
+
+lowintra = invasion_multi(n_seasons, init_pop, para, c(B, 0.10, 0.10), delta_s_lst, var = 0, season_lens)
+
+# Mid intraspecific competition, asymmetric
+
+midintra = invasion_multi(n_seasons, init_pop, para, c(B, 0.10, 0.12), delta_s_lst, var = 0, season_lens)
+
+# High intraspecific competition, symmetric
+
+highintra = invasion_multi(n_seasons, init_pop, para, c(B, 0.12, 0.12), delta_s_lst, var = 0, season_lens)
+
+```
+
+- Calculating ND and RFD
+
+```{r}
+
+nd_rfd = midintra %>% select(inv_i, sensitivity, delta_s, season_len) %>% pivot_wider(names_from = inv_i, values_from = sensitivity) %>%
+  mutate(ND = 1-sqrt(`1`*`2`), RFD = sqrt(`1`/`2`)) %>% 
+  mutate(outcome = case_when(RFD > 1-ND & RFD < 1/(1-ND) ~ "3", 
+                             RFD > 1-ND & RFD > 1/(1-ND) ~ "2", 
+                             RFD < 1-ND & RFD < 1/(1-ND) ~ "1", 
+                             RFD < 1-ND & RFD > 1/(1-ND) ~ "4"))
+
+```
+
+- Periodic Environment
+
+```{r}
+
+init_pop = cbind(c(0, 0, 0, 0, 0, 0, 3), c(0, 0, 0, 0, 0, 0, 3))
+para = cbind(c(12, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8), c(12, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8))
+mu = c(0.2, 0.2)
+s = 7
+season_lens = 6*c(2, 4, 8, 16, 20)+1
+n_seasons = 50
+
+delta_s_lst = seq(-2, 2, 1)
+var2 = invasion_multi(n_seasons, init_pop, para, c(B, 0.10, 0.12), delta_s_lst, var = 2, season_lens, periodic = T)
+
+```
+
+## No Stage-mediated Interspecific Competition
+
+Change `generate_amat()` in [Functions.R](Functions.R) accordingly: $\alpha_{11}$, $\alpha_{22}$, $\alpha_{12}$ and $\alpha_{21}$ should all be constants (`"c"`).
+
+- Invasion Analysis
+
+```{r}
+
+delta_s_lst = seq(-4, 4, 1)
+init_pop = cbind(c(0, 0, 0, 0, 0, 0, 3), c(0, 0, 0, 0, 0, 0, 3))
+para = cbind(c(12, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8), c(12, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8))
+mu = c(0.2, 0.2)
+s = 7
+season_lens = 6*c(2, 4, 8, 16, 20)+1
+n_seasons = 50
+
+# Low intraspecific competition, symmetric
+
+xlowintra = invasion_multi(n_seasons, init_pop, para, c(B, 0.10, 0.10), delta_s_lst, var = 0, season_lens)
+
+# Mid intraspecific competition, asymmetric
+
+xmidintra = invasion_multi(n_seasons, init_pop, para, c(B, 0.10, 0.12), delta_s_lst, var = 0, season_lens)
+
+# High intraspecific competition, symmetric
+
+xhighintra = invasion_multi(n_seasons, init_pop, para, c(B, 0.12, 0.12), delta_s_lst, var = 0, season_lens)
+
+```
+
+- Calculating ND and RFD
+
+```{r}
+
+xnd_rfd = xmidintra %>% select(inv_i, sensitivity, delta_s, season_len) %>% pivot_wider(names_from = inv_i, values_from = sensitivity) %>%
+  mutate(ND = 1-sqrt(`1`*`2`), RFD = sqrt(`1`/`2`)) %>% 
+  mutate(outcome = case_when(RFD > 1-ND & RFD < 1/(1-ND) ~ "3", 
+                             RFD > 1-ND & RFD > 1/(1-ND) ~ "2", 
+                             RFD < 1-ND & RFD < 1/(1-ND) ~ "1", 
+                             RFD < 1-ND & RFD > 1/(1-ND) ~ "4"))
+
+```
+
+- Periodic Environment
+
+```{r}
+
+init_pop = cbind(c(0, 0, 0, 0, 0, 0, 3), c(0, 0, 0, 0, 0, 0, 3))
+para = cbind(c(12, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8), c(12, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8))
+mu = c(0.2, 0.2)
+s = 7
+season_lens = 6*c(2, 4, 8, 16, 20)+1
+n_seasons = 50
+
+delta_s_lst = seq(-2, 2, 1)
+xvar2 = invasion_multi(n_seasons, init_pop, para, c(B, 0.10, 0.12), delta_s_lst, var = 2, season_lens, periodic = T)
+
+```
+
+# Main Text Figures
+
+If mathematical expressions are not showing correctly, go to Tools -> Global Options -> Graphics, and select backend graphic device as "AGG".
+
+## Figure 2
+
+```{r}
+
+compData = tibble(a12 = comp_coeff(B, scal, xmid, timeint, "v"), a21 = comp_coeff(B, -scal, xmid, timeint, "v"), pshift = timeint)
+
+plcomp_inter =
+compData %>% pivot_longer(col = a12:a21, names_to = "coefficient", values_to = "values") %>% 
+  ggplot(aes(x = pshift, y = values, color = coefficient)) + geom_line() + geom_point(size = 2) + theme_bw() + ggtitle("A") + 
+  scale_color_manual(name = "Coefficients", values = color_scheme, labels = c(expression(paste(beta[12])), expression(paste(beta[21])))) +
+  scale_x_continuous(name = expression(paste("Initial stage difference (", Delta, "s)")), breaks = timeint) +
+  ylab("Competition coefficients") +
+  theme(panel.grid = element_blank()) + theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20), 
+                                              legend.text = element_text(size = 17), legend.title = element_text(size = 20), 
+                                              plot.title = element_text(size = 20))
+
+time = 130
+season_len = 13
+
+out = seasons(time, init_pop, para, alpha, mean_diff, var = 0, season_len)
+
+pldyn = 
+convert_output(out) %>% pivot_longer(col = 1:7, names_to = "stage", values_to = "population") %>% 
+  group_by(time, species) %>% summarize(sum(population)) %>% rename(population = `sum(population)`) %>% 
   ggplot(aes(x = time, y = population, color = species)) + geom_line() + theme_bw() + 
-  scale_color_manual(values = color_scheme) + #xlim(0, 50) + 
+  scale_color_manual(values = color_scheme) + ggtitle("B") + 
+  scale_x_continuous(name = "Season", breaks = seq(0, time+1, season_len), label = seq(0, time/season_len, 1)) +
+  geom_vline(xintercept = seq(season_len+1, time+1, season_len), color = "#577C8A", linetype = 4) +
   guides(color = guide_legend(title = "Species")) + ylab("Population") + xlab("Time") +
   theme(panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank()) + 
   theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20), axis.ticks = element_blank(), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20))
+
+```
+
+- Save Figure 2
+
+```{r}
+
+ggsave("Figures/Fig2.pdf", plot = (plcomp_inter | pldyn), 
+       width = 3600, height = 1200, unit = "px")
+
+```
+
+## Figure 3
+
+- Deterministic (panels A, C)
+
+```{r}
+
+delta_s_lst = seq(-4, 4, 1)
+
+plmid_tra = 
+midintra %>% select(inv_i, lambda_ij, delta_s, season_len) %>% 
+  pivot_wider(names_from = inv_i, values_from = lambda_ij) %>% 
+  mutate(outcome = ifelse(`1`>0 & `2`>0, 3, 
+                          ifelse(`1`>0 & `2`<0, 1, 
+                                 ifelse(`1`<0 & `2`>0, 2, 4)))) %>% 
+  ggplot(aes(x = as.factor(delta_s), y = as.factor(season_len), fill = factor(outcome))) + geom_tile(color = "white") + theme_bw() + 
+  scale_x_discrete(name = expression(paste(Delta, "s")), breaks = delta_s_lst, label = delta_s_lst) +
+  scale_y_discrete(name = "# Generations per season", breaks = season_lens, label = (season_lens-1)/6) +
+  geom_rect(aes(xmin = 2.5, ymin = 0.5, xmax = 7.5, ymax = 5.5), color = "black", alpha = 0, size = 1) + 
+  # change here; for periodic, guide goes here
+  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme) +
+  # scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Numeric PE"), values = c("#a61b29", "#0eb0c9", "#577C8A"), guide = "none") +
+  theme(panel.grid.major = element_blank()) + 
+  ggtitle(expression(paste("A. Constant ", Delta, "s"))) +
+  theme(axis.text = element_text(size = 15), axis.ticks = element_blank(), 
+        axis.title.x = element_blank(), axis.title.y = element_text(size = 20), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20), 
+        plot.title = element_text(size = 20))
+
+xplmid_tra = 
+xmidintra %>% select(inv_i, lambda_ij, delta_s, season_len) %>% 
+  pivot_wider(names_from = inv_i, values_from = lambda_ij) %>% 
+  mutate(outcome = ifelse(`1`>0 & `2`>0, 3, 
+                          ifelse(`1`>0 & `2`<0, 1, 
+                                 ifelse(`1`<0 & `2`>0, 2, 4)))) %>% 
+  ggplot(aes(x = as.factor(delta_s), y = as.factor(season_len), fill = factor(outcome))) + geom_tile(color = "white") + theme_bw() + 
+  scale_x_discrete(name = expression(paste(Delta, "s")), breaks = delta_s_lst, label = delta_s_lst) +
+  scale_y_discrete(name = "# Generations per season", breaks = season_lens, label = (season_lens-1)/6) +
+  geom_rect(aes(xmin = 2.5, ymin = 0.5, xmax = 7.5, ymax = 5.5), color = "black", alpha = 0, size = 1) + 
+  # change here 
+  # scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme, guide = "none") +
+  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Numeric PE"), values = c("#a61b29", "#0eb0c9", "#577C8A"), guide = "none") +
+  theme(panel.grid.major = element_blank()) + 
+  ggtitle(expression(paste("C. Constant ", Delta, "s"))) +
+  theme(axis.text = element_text(size = 15), axis.ticks = element_blank(), 
+        axis.title.x = element_text(size = 20), axis.title.y = element_text(size = 20), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20))
+
+```
+
+- Periodic (Panels B, D)
+
+```{r}
+
+delta_s_lst = seq(-2, 2, 1)
+
+plmid_tra_peri = 
+  var2 %>% select(inv_i, lambda_ij, delta_s, season_len) %>% 
+  pivot_wider(names_from = inv_i, values_from = lambda_ij) %>% 
+  mutate(outcome = ifelse(`1`>0 & `2`>0, 3, 
+                          ifelse(`1`>0 & `2`<0, 1, 
+                                 ifelse(`1`<0 & `2`>0, 2, 4)))) %>% 
+  ggplot(aes(x = as.factor(delta_s), y = as.factor(season_len), fill = factor(outcome))) + geom_tile(color = "white") + theme_bw() + 
+  scale_x_discrete(name = expression(bar(paste(Delta, "s"))), breaks = delta_s_lst, label = delta_s_lst) +
+  scale_y_discrete(name = "# Generations per season", breaks = season_lens, label = (season_lens-1)/6) +
+  # change here 
+  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme, guide = "none") +
+  # scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Numeric PE"), values = c("#a61b29", "#0eb0c9", "#577C8A"), guide = "none") +
+  theme(panel.grid.major = element_blank()) + 
+  ggtitle(expression(paste("B. Periodic ", Delta, "s"))) +
+  theme(axis.text = element_text(size = 15), axis.title = element_blank(), axis.ticks = element_blank(), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20))
+
+xplmid_tra_peri = 
+  xvar2 %>% select(inv_i, lambda_ij, delta_s, season_len) %>% 
+  pivot_wider(names_from = inv_i, values_from = lambda_ij) %>% 
+  mutate(outcome = ifelse(`1`>0 & `2`>0, 3, 
+                          ifelse(`1`>0 & `2`<0, 1, 
+                                 ifelse(`1`<0 & `2`>0, 2, 4)))) %>% 
+  ggplot(aes(x = as.factor(delta_s), y = as.factor(season_len), fill = factor(outcome))) + geom_tile(color = "white") + theme_bw() + 
+  scale_x_discrete(name = expression(bar(paste(Delta, "s"))), breaks = delta_s_lst, label = delta_s_lst) +
+  scale_y_discrete(name = "# Generations per season", breaks = season_lens, label = (season_lens-1)/6) +
+  # change here 
+  # scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme, guide = "none") +
+  scale_fill_manual(name = "Outcome", labels = c("1 wins", "Numeric PE"), values = c("#a61b29", "#577C8A"), guide = "none") +
+  theme(panel.grid.major = element_blank()) + 
+  ggtitle(expression(paste("D. Periodic ", Delta, "s"))) +
+  theme(axis.text = element_text(size = 15), axis.title.x = element_text(size = 20), 
+        axis.title.y = element_blank(), axis.ticks = element_blank(), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20))
+
+```
+
+- Save Figure 3
+
+```{r}
+
+ggsave("Figures/Fig3.pdf", 
+       plot = plmid_tra + plmid_tra_peri + xplmid_tra + xplmid_tra_peri + 
+              plot_layout(widths = c(1.75, 1), guides = "collect"), 
+       width = 3000, height = 2250, unit = "px")
+
+```
+
+## Figure 4
+
+- Stage-mediated Interspecific Competition
+
+```{r}
+
+ND_min = -0.3
+ND_max = 0.6
+RFD_min = -1.3
+RFD_max = 1.3
+
+# This is the only panel with legend
+
+midintra_tra_13 =
+  generate_baseplot(ND_min, ND_max, RFD_min, RFD_max) + 
+  geom_path(data = nd_rfd %>% filter(season_len == 13), 
+            aes(x = ND, y = log10(RFD))) + 
+  geom_point(data = nd_rfd %>% filter(season_len == 13), 
+             aes(x = ND, y = log10(RFD), color = outcome), size = 3) + 
+  scale_color_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), 
+                     values = color_scheme) + 
+  ggtitle("A. T = 2 generations") +
+  annotate("text", size = 6,
+           x = c(0.51, 0.51, -0.2, 0.4, 0.4), 
+           y = c(0.12, -0.12, -0.2, 0.45, -0.45), 
+           label = c("4", "-4", "0", "2", "-2")) + 
+  theme(axis.text = element_text(size = 15), 
+        axis.title.x = element_blank(), axis.title.y = element_text(size = 20),
+        axis.ticks = element_blank(), plot.title = element_text(size = 20), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20))
+
+  
+ND_min = -0.2
+ND_max = 0.25
+RFD_min = -0.25
+RFD_max = 0.25
+
+midintra_tra_25 = 
+  generate_baseplot(ND_min, ND_max, RFD_min, RFD_max) + 
+  geom_path(data = nd_rfd %>% filter(season_len == 25), 
+            aes(x = ND, y = log10(RFD))) + 
+  geom_point(data = nd_rfd %>% filter(season_len == 25), 
+             aes(x = ND, y = log10(RFD), color = outcome), size = 3) + 
+  scale_color_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), 
+                     values = color_scheme, guide = "none") + 
+  ggtitle("B. T = 4 generations") +
+  annotate("text", size = 6,
+           x = c(0.23, 0.23, -0.14, 0.12, 0.12),
+           y = c(0.08, -0.14, -0.03, 0.08, -0.12),
+           label = c("4", "-4", "0", "2", "-2")) + 
+  theme(axis.text = element_text(size = 15), 
+        axis.title.x = element_blank(), axis.title.y = element_blank(), 
+        axis.ticks = element_blank(), plot.title = element_text(size = 20), 
         legend.text = element_text(size = 17), legend.title = element_text(size = 20))
 
 ```
 
-## Trajectory and Endpoint Analysis
-
-This chunk produces **Figure 5** in main text and **Figure S15**. Please follow captions to change specific parameters.
+- No Stage-mediated Interspecific Competition
 
 ```{r}
 
-B = 0.225
-scal = 0.85
-xmid = 0
-# Delta s; changeable
-mean_time = 2
-var = c(3)
+ND_min = -1
+ND_max = 0.1
+RFD_min = -1
+RFD_max = 1
 
-init_pop = data.frame("N1" = c(3, 0, 0, 0, 0, 0), "N2" = c(3, 0, 0, 0, 0, 0))
-para = data.frame("para1" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6), "para2" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6))
-alpha = c(B, 0.12, 0.14)
-surv = c(0.8, 0.8)
-s = 6
-G = rep(0, (s-1))
-n_cycles = 30
-time = 1000
-# Season length; changeable
-cycle_len = 18
+xmidintra_tra_13 =
+  generate_baseplot(ND_min, ND_max, RFD_min, RFD_max) + 
+  geom_path(data = xnd_rfd %>% filter(season_len == 13), 
+            aes(x = ND, y = log10(RFD))) + 
+  geom_point(data = xnd_rfd %>% filter(season_len == 13), 
+             aes(x = ND, y = log10(RFD), color = outcome), size = 3) + 
+  scale_color_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Numeric PE"), 
+                     values = c("#a61b29", "#0eb0c9", "#577C8A"), guide = "none") +
+  ggtitle("C. T = 2 generations") +
+  annotate("text", size = 6,
+           x = c(-0.43, -0.41, -0.48, -0.62, -0.62), 
+           y = c(0.4, -0.4, -0.1, 0.5, -0.55), 
+           label = c("4", "-4", "0", "2", "-2")) + 
+  theme(axis.text = element_text(size = 15), 
+        axis.title.x = element_text(size = 20), axis.title.y = element_text(size = 20),
+        axis.ticks = element_blank(), plot.title = element_text(size = 20), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20))
 
-result0_1 = traj_stoc(n_cycles, time, para, init_pop, alpha, gamma = G, mean_time, c(0), cycle_len, 1, 1) %>% 
-  filter(time %in% c(max(cycle_no)*(cycle_len), (max(cycle_no)-1)*(cycle_len), (max(cycle_no)-2)*(cycle_len))) %>% 
-  group_by(species, variation, rept) %>% summarize(min(population)) %>% 
-  rename(min = `min(population)`)
+  
+ND_min = -0.55
+ND_max = 0.1
+RFD_min = -0.2
+RFD_max = 0.2
 
-result3_1 = traj_stoc(n_cycles, time, para, init_pop, alpha, gamma = G, mean_time, var, cycle_len, rept, 1) %>% 
-  filter(time %in% c(max(cycle_no)*(cycle_len), (max(cycle_no)-1)*(cycle_len), (max(cycle_no)-2)*(cycle_len))) %>% 
-  group_by(species, variation, rept) %>% summarize(min(population)) %>% 
-  rename(min = `min(population)`)
-
-result0_2 = traj_stoc(n_cycles, time, para, init_pop, alpha, gamma = G, mean_time, c(0), cycle_len, 1, 2) %>% 
-  filter(time %in% c(max(cycle_no)*(cycle_len), (max(cycle_no)-1)*(cycle_len), (max(cycle_no)-2)*(cycle_len))) %>% 
-  group_by(species, variation, rept) %>% summarize(min(population)) %>% 
-  rename(min = `min(population)`)
-
-result3_2 = traj_stoc(n_cycles, time, para, init_pop, alpha, gamma = G, mean_time, var, cycle_len, rept, 2) %>% 
-  filter(time %in% c(max(cycle_no)*(cycle_len), (max(cycle_no)-1)*(cycle_len), (max(cycle_no)-2)*(cycle_len))) %>% 
-  group_by(species, variation, rept) %>% summarize(min(population)) %>% 
-  rename(min = `min(population)`)
-
-pl3 = ggplot() +
-  geom_boxplot(data = result3_1, aes(x = species, y = min, color = species), width = 0.5, outlier.shape = 17, outlier.alpha = 0.5) +
-  geom_jitter(data = result3_1, aes(x = species, y = min, color = species), alpha = 0.5, shape = 17, width = 0.1) +
-  geom_point(data = result0_1, aes(x = species, y = min, color = species), size = 3) + theme_bw() +
-  theme(panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(), 
-        axis.text.x = element_blank(), axis.ticks.x = element_blank()) + ylim(0, 10) + ggtitle("C") + 
-  theme(axis.text = element_text(size = 15), axis.title.x = element_text(size = 20), axis.title.y = element_text(size = 20),
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20)) +
-  scale_color_manual(name = "Species", labels = c("1", "2"), values = color_scheme, guide = "none") + 
-  xlab("1 invades") + ylab("Final population")
-
-pl4 = ggplot() +
-  geom_boxplot(data = result3_2, aes(x = species, y = min, color = species), width = 0.5, outlier.shape = 17, outlier.alpha = 0.5) +
-  geom_jitter(data = result3_2, aes(x = species, y = min, color = species), alpha = 0.5, shape = 17, width = 0.1) +
-  geom_point(data = result0_2, aes(x = species, y = min, color = species), size = 3) + theme_bw() +
-  theme(panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(), 
-        axis.title.y = element_blank(), axis.text = element_blank(), axis.ticks.x = element_blank()) + 
-  theme(axis.title.y = element_blank(), axis.title.x = element_text(size = 20),
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20)) + ylim(0, 10) + 
-  scale_color_manual(name = "Species", labels = c("1", "2"), values = color_scheme) + 
-  xlab("2 invades") + scale_x_discrete(labels = c("1", "2"))
-
-(pl3 | pl4) + plot_layout(guides = "collect")
+xmidintra_tra_25 =
+  generate_baseplot(ND_min, ND_max, RFD_min, RFD_max) + 
+  geom_path(data = xnd_rfd %>% filter(season_len == 25), 
+            aes(x = ND, y = log10(RFD))) + 
+  geom_point(data = xnd_rfd %>% filter(season_len == 25), 
+             aes(x = ND, y = log10(RFD), color = outcome), size = 3) + 
+  scale_color_manual(name = "Outcome", labels = c("Numeric PE"), 
+                     values = c("#577C8A"), guide = "none") +
+  ggtitle("D. T = 4 generations") + 
+  annotate("text", size = 6,
+           x = c(-0.41, -0.4, -0.5, -0.38, -0.37),
+           y = c(0.09, -0.12, -0.02, 0, -0.03),
+           label = c("4", "-4", "0", "2", "-2")) +
+  theme(axis.text = element_text(size = 15), 
+        axis.title.x = element_text(size = 20), axis.title.y = element_blank(),
+        axis.ticks = element_blank(), plot.title = element_text(size = 20), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20))
 
 ```
 
-## Phase Diagram
-
-The following two chunks produce the right panel of **Figure 3A** and **3B**. Note that these chunks take a long time to run. The first chunk uses $\alpha^{11}=0.06$, $\alpha^{22}=0.07$ (asymmetric) and the second uses $\alpha^{11}=\alpha^{22}=0.06$. 
+- Save Figure 4
 
 ```{r}
 
-B = 0.225
-scal = 0.85
-xmid = 0
-deltp_lst = seq(-2, 2, 1)
-var = c(3)
-
-# fig 3B; alpha11 = 0.06, alpha22 = 0.07
-
-init_pop = data.frame("N1" = c(3, 0, 0, 0, 0, 0), "N2" = c(3, 0, 0, 0, 0, 0))
-para = data.frame("para1" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6), "para2" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6))
-alpha = c(B, 0.12, 0.14)
-surv = c(0.8, 0.8)
-s = 6
-G = rep(0, (s-1))
-n_cycles = 20
-cycle_lens = c(12, 18, 24, 36, 48, 60, 96, 120)
-rept = 30
-
-result3 = inv_traj(n_cycles, para, init_pop, alpha, deltp_lst, var, cycle_lens, rept) %>% parse_invtraj()
-
-output = result3 %>% group_by(deltp, cycle_len) %>% count(outcome) %>% mutate(frequency = n/sum(n))
-output$outcome = factor(output$outcome)
-
-transformed = output %>% select(-n) %>% pivot_wider(names_from = "outcome", values_from = "frequency")
-transformed$n = 1:(length(deltp_lst)*length(cycle_lens))
-transformed$cycle_len = rep(seq(1:length(cycle_lens)), length(deltp_lst))
-transformed[is.na(transformed)] = 0
-
-ggplot() + geom_scatterpie(aes(x = deltp, y = cycle_len, group = factor(n), r = 0.45), data = transformed, cols = 3:6, color = "white") + 
-  scale_x_continuous(name = "Relative arrival time", breaks = deltp_lst, label = deltp_lst) +
-  scale_y_continuous(name = "Season length", breaks = seq(1, length(cycle_lens), 1), label = cycle_lens) + coord_equal() + 
-  scale_fill_manual(values = color_scheme, name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE")) + 
-  theme_bw() + theme(panel.grid.major = element_blank()) + 
-  theme(axis.text = element_text(size = 15), axis.title.x = element_text(size = 20), axis.title.y = element_blank(),
-        axis.ticks = element_blank(), legend.text = element_text(size = 17), legend.title = element_text(size = 20))
+ggsave("Figures/Fig4.pdf", 
+       plot = (midintra_tra_13 | midintra_tra_25) / (xmidintra_tra_13 | xmidintra_tra_25) + 
+         plot_layout(guides = "collect"), 
+       width = 3000, height = 2250, unit = "px")
 
 ```
 
+## Figure 5
+
+- Stage-mediated Interspecific Competition
+
 ```{r}
 
-# fig 3A; alpha11 = 0.04, alpha22 = 0.05
+vnd_rfd = var2 %>% 
+  select(inv_i, sensitivity, delta_s, season_len) %>% 
+  pivot_wider(names_from = inv_i, values_from = sensitivity) %>%
+  mutate(ND = 1-sqrt(`1`*`2`), RFD = sqrt(`1`/`2`)) %>% 
+  mutate(outcome = ifelse(1-ND < RFD & RFD < 1/(1-ND), "3", 
+                          ifelse(RFD > 1-ND & RFD > 1/(1-ND), "2", 
+                                 ifelse(RFD < 1-ND & RFD < 1/(1-ND), "1", "4"))))
 
-alpha = c(B, 0.12, 0.12)
+# 2 Generations
 
-result3 = inv_traj(n_cycles, para, init_pop, alpha, deltp_lst, var, cycle_lens, rept) %>% parse_invtraj()
+ND_min = -0.3
+ND_max = 0.6
+RFD_min = -1.3
+RFD_max = 1.3
 
-output2 = result3 %>% group_by(deltp, cycle_len) %>% count(outcome) %>% mutate(frequency = n/sum(n))
-output2$outcome = factor(output2$outcome)
+midintra_tra_peri_13 =
+  generate_baseplot(ND_min, ND_max, RFD_min, RFD_max) + 
+  geom_path(data = vnd_rfd %>% filter(season_len == 13), 
+            aes(x = ND, y = log10(RFD))) + 
+  geom_point(data = vnd_rfd %>% filter(season_len == 13), 
+             aes(x = ND, y = log10(RFD), color = outcome), size = 3) + 
+  scale_color_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), 
+                     values = color_scheme) + 
+  ggtitle("A. T = 2 generations") + 
+  annotate("text", size = 6,
+           x = c(0.55, 0.08, 0.08),
+           y = c(-0.1, 0.24, -0.27),
+           label = c("0", "2", "-2")) +
+  theme(axis.text = element_text(size = 15), 
+        axis.title.x = element_blank(), axis.title.y = element_text(size = 20),
+        axis.ticks = element_blank(), plot.title = element_text(size = 20), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20))
 
-transformed2 = output2 %>% select(-n) %>% pivot_wider(names_from = "outcome", values_from = "frequency")
-transformed2$n = 1:(length(deltp_lst)*length(cycle_lens))
-transformed2$cycle_len = rep(seq(1:length(cycle_lens)), length(deltp_lst))
-transformed2[is.na(transformed2)] = 0
 
-ggplot() + geom_scatterpie(aes(x = deltp, y = cycle_len, group = factor(n), r = 0.45), data = transformed2, cols = 3:6, color = "white") + 
-  scale_x_continuous(name = "Relative arrival time", breaks = deltp_lst, label = deltp_lst) +
-  scale_y_continuous(name = "Season length", breaks = seq(1, length(cycle_lens), 1), label = cycle_lens) + coord_equal() + 
-  scale_fill_manual(values = color_scheme, name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), guide = "none") + 
-  theme_bw() + theme(panel.grid.major = element_blank()) + 
-  theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20), axis.title.y = element_blank(),
-        axis.ticks = element_blank(), legend.text = element_text(size = 17), legend.title = element_text(size = 20))
+# 4 Generations
+
+ND_min = -0.2
+ND_max = 0.25
+RFD_min = -0.25
+RFD_max = 0.25
+
+midintra_tra_peri_25 =
+  generate_baseplot(ND_min, ND_max, RFD_min, RFD_max) + 
+  geom_path(data = vnd_rfd %>% filter(season_len == 25), 
+            aes(x = ND, y = log10(RFD))) + 
+  geom_point(data = vnd_rfd %>% filter(season_len == 25), 
+             aes(x = ND, y = log10(RFD), color = outcome), size = 3) + 
+  scale_color_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), 
+                     values = color_scheme, guide = "none") + 
+  ggtitle("B. T = 4 generations") +
+  annotate("text", size = 6,
+           x = c(0.13, 0.03, 0.03),
+           y = c(-0.02, 0.05, -0.10),
+           label = c("0", "2", "-2")) +
+  theme(axis.text = element_text(size = 15), 
+        axis.title.x = element_blank(), axis.title.y = element_blank(),
+        axis.ticks = element_blank(), plot.title = element_text(size = 20), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20))
 
 ```
 
-## Phase Diagram (Numeric Priority Effects Only)
-
-This chunk generates the right panel of **Figure 3C**. Make sure to change `generate_amat()` in `Functions.R` so that stage-mediated interspecific competition is not included.
+- No Stage-mediated Interspecific Competition
 
 ```{r}
 
-B = 0.225
-deltp_lst = seq(-2, 2, 1)
-var = c(3)
+xvnd_rfd = xvar2 %>% 
+  select(inv_i, sensitivity, delta_s, season_len) %>% 
+  pivot_wider(names_from = inv_i, values_from = sensitivity) %>%
+  mutate(ND = 1-sqrt(`1`*`2`), RFD = sqrt(`1`/`2`)) %>% 
+  mutate(outcome = ifelse(1-ND < RFD & RFD < 1/(1-ND), "3", 
+                          ifelse(RFD > 1-ND & RFD > 1/(1-ND), "2", 
+                                 ifelse(RFD < 1-ND & RFD < 1/(1-ND), "1", "4"))))
 
-init_pop = data.frame("N1" = c(3, 0, 0, 0, 0, 0), "N2" = c(3, 0, 0, 0, 0, 0))
-para = data.frame("para1" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6), "para2" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6))
-alpha = c(B, 0.12, 0.14)
-surv = c(0.8, 0.8)
-s = 6
-G = rep(0, (s-1))
-n_cycles = 20
-cycle_lens = c(12, 18, 24, 36, 48, 60, 96, 120)
-rept = 30
+ND_min = -1
+ND_max = 0.1
+RFD_min = -1
+RFD_max = 1
 
-xresult3 = inv_traj(n_cycles, para, init_pop, alpha, deltp_lst, var, cycle_lens, rept) %>% parse_invtraj()
+xmidintra_tra_peri_13 =
+  generate_baseplot(ND_min, ND_max, RFD_min, RFD_max) + 
+  geom_path(data = xvnd_rfd %>% filter(season_len == 13), 
+            aes(x = ND, y = log10(RFD))) + 
+  geom_point(data = xvnd_rfd %>% filter(season_len == 13), 
+             aes(x = ND, y = log10(RFD), color = outcome), size = 3) + 
+  scale_color_manual(name = "Outcome", labels = c("1 wins", "Numeric PE"), 
+                     values = c("#a61b29", "#577C8A"), guide = "none") +
+  ggtitle("C. T = 2 generations") +
+  annotate("text", size = 6,
+           x = c(-0.41, -0.42, -0.43),
+           y = c(-0.01, 0.25, -0.28),
+           label = c("0", "2", "-2")) +
+  theme(axis.text = element_text(size = 15), 
+        axis.title.y = element_text(size = 20), axis.title.x = element_text(size = 20),
+        axis.ticks = element_blank(), plot.title = element_text(size = 20), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20))
 
-xoutput = xresult3 %>% group_by(deltp, cycle_len) %>% count(outcome) %>% mutate(frequency = n/sum(n))
-xoutput$outcome = factor(xoutput$outcome)
+  
+ND_min = -0.55
+ND_max = 0.1
+RFD_min = -0.2
+RFD_max = 0.2
 
-xtransformed = xoutput %>% select(-n) %>% pivot_wider(names_from = "outcome", values_from = "frequency")
-xtransformed$n = 1:(length(deltp_lst)*length(cycle_lens))
-xtransformed$cycle_len = rep(seq(1:length(cycle_lens)), length(deltp_lst))
-xtransformed[is.na(xtransformed)] = 0
-
-ggplot() + 
-  geom_scatterpie(aes(x = deltp, y = cycle_len, group = factor(n), r = 0.45), data = xtransformed, cols = 3:6, color = "white") + 
-  scale_x_continuous(name = "Relative arrival time", breaks = deltp_lst, label = deltp_lst) +
-  scale_y_continuous(name = "Season length", breaks = seq(1, length(cycle_lens), 1), label = cycle_lens) + coord_equal() + 
-  scale_fill_manual(values = color_scheme, name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), guide = "none") +
-  theme_bw() + theme(panel.grid.major = element_blank()) + 
-  theme(axis.text = element_text(size = 15), axis.title.x = element_text(size = 20), axis.title.y = element_blank(),
-        axis.ticks = element_blank(), legend.text = element_text(size = 17), legend.title = element_text(size = 20))
+xmidintra_tra_peri_25 =
+  generate_baseplot(ND_min, ND_max, RFD_min, RFD_max) + 
+  geom_path(data = xvnd_rfd %>% filter(season_len == 25), 
+            aes(x = ND, y = log10(RFD))) + 
+  geom_point(data = xvnd_rfd %>% filter(season_len == 25), 
+             aes(x = ND, y = log10(RFD), color = outcome), size = 3) + 
+  scale_color_manual(name = "Outcome", labels = c("Numeric PE"), 
+                     values = c("#577C8A"), guide = "none") +
+  ggtitle("D. T = 4 generations") +
+  annotate("text", size = 6,
+           x = c(-0.38, -0.46, -0.46),
+           y = c(-0.01, 0.04, -0.07),
+           label = c("0", "2", "-2")) +
+  theme(axis.text = element_text(size = 15), 
+        axis.title.x = element_text(size = 20), axis.title.y = element_blank(),
+        axis.ticks = element_blank(), plot.title = element_text(size = 20), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20))
 
 ```
 
-# Temporal Refuge Effects due to Stage Difference
-
-This section examines the temporal refuge effect that partially contributes to the early arriver advantage in this stage-structured model (See **Supporting Information**, **Section 2.3**). 
-
-## Stage-Mediated Interspecific Competition
-
-This chunk produces panel A in **Figure S7**, **S8** and **S9**. **Figure S8A** is identical to **Figure S3A** (see below, [Stage-Mediated Intraspecific Competition](#Stage-Mediated Intraspecific Competition)).
+- Save Figure 5
 
 ```{r}
 
-B = 0.225
-scal = 0.85
-xmid = 0
-mean_time = -4
-var = c(0)
-
-init_pop = data.frame("N1" = c(3, 0, 0, 0, 0, 0), "N2" = c(3, 0, 0, 0, 0, 0))
-para = data.frame("para1" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6), "para2" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6))
-alpha = c(B, 0.12, 0.14)
-surv = c(0.8, 0.8)
-s = 6
-time = 310
-cycle_len = 18
-invasion_time = 1*cycle_len
-
-# Figure S7A; stage distribution
-
-result1 = cycles_invade(time, para, init_pop, alpha, mean_time, var, cycle_len, inv_spp = 1) %>% 
-  pivot_longer(cols = N1:N2, names_to = "species", values_to = "population") %>% filter(species == "N1")
-result1$population = sqrt(result1$population)
-
-result2 = cycles_invade(time, para, init_pop, alpha, mean_time, var, cycle_len, inv_spp = 1) %>% 
-  pivot_longer(cols = N1:N2, names_to = "species", values_to = "population") %>% filter(species == "N2")
-result2$population = sqrt(result2$population)
-
-ggplot() + aes(x = time, y = population, color = species) +
-  geom_line(data = result1) + aes(alpha = as.factor(stage)) + 
-  geom_line(data = result2) + aes(alpha = as.factor(stage)) + ggtitle("A") +
-  theme_bw()  + scale_color_manual(values = color_scheme, name = "Species", labels = c("1", "2")) + xlim(49, 104) + ylim(0, 3) + 
-  geom_vline(xintercept = seq(cycle_len+1, (time%/%cycle_len)*cycle_len+1, cycle_len), color = "#577C8A", linetype = 4) +
-  theme(axis.text = element_text(size = 15), axis.title.y = element_text(size = 20), axis.title.x = element_blank(),
-        axis.ticks = element_blank(), legend.text = element_text(size = 17), legend.title = element_text(size = 20), 
-        plot.title = element_text(size = 20)) + ylab("sqrt(Population)") + 
-  scale_alpha_manual(name = "Stage", values = c(0.25, 0.4, 0.55, 0.7, 0.85, 1), labels = c("J1", "J2", "J3", "J4", "J5", "A"))
-
-# Figure S8A; interaction strengths
-
-cycles_invade(time, para, init_pop, alpha, mean_time, var, cycle_len, inv_spp = 1, record = 1) %>% 
-  replace_na(list(intra11 = 0, inter12 = 0, inter21 = 0, intra22 = 0)) %>% 
-  pivot_longer(cols = 1:4, names_to = "interaction", values_to = "strength") %>% 
-  ggplot(aes(x = time, y = strength, linetype = interaction, color = interaction)) + geom_line() + 
-  geom_vline(xintercept = seq(cycle_len+1, (time%/%cycle_len)*cycle_len+1, cycle_len), color = "#577C8A", linetype = 4) +
-  theme_bw() + xlim(49, 104) + ylim(0, 1.25) + 
-  theme(axis.text = element_text(size = 15), axis.title.y = element_text(size = 20), axis.title.x = element_blank(),
-        axis.ticks = element_blank(), legend.text = element_text(size = 17), legend.title = element_text(size = 20), 
-        plot.title = element_text(size = 20)) + ylab("Strength") + 
-  scale_linetype_manual(name = "Type", values = c(1, 1, 2, 2)) +
-  scale_color_manual(name = "Type", values = c(color_scheme[1:2], color_scheme[1:2]))
-
-# Figure S9A; population dynamics
-
-cycles_invade(time, para, init_pop, alpha, mean_time, var, cycle_len, inv_spp = 1) %>%
-  pivot_longer(cols = N1:N2, names_to = "species", values_to = "population") %>% 
-  group_by(time, species, variation) %>% summarize(sum(population)) %>% rename(population = `sum(population)`) %>% 
-  ggplot(aes(x = time, y = population, color = species)) + geom_line() + theme_bw() + 
-  scale_color_manual(values = color_scheme, name = "Species", labels = c("1", "2")) + ggtitle("A") + 
-  theme(panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank()) + ylab("Population") + 
-  scale_x_continuous(name = "Season", breaks = seq(0, time+(time/cycle_len-1), cycle_len+1), label = seq(0, time %/% cycle_len, 1)) + 
-  geom_vline(xintercept = seq(cycle_len+1, (time%/%cycle_len)*cycle_len+1, cycle_len), color = "#577C8A", linetype = 4) +
-  theme(axis.text = element_text(size = 15), axis.title.x = element_text(size = 20), axis.title.y = element_text(size = 20),
-        axis.ticks = element_blank(), legend.text = element_text(size = 17), legend.title = element_text(size = 20), 
-        plot.title = element_text(size = 20))
+ggsave("Figures/Fig5.pdf", 
+       plot = (midintra_tra_peri_13 | midintra_tra_peri_25) / (xmidintra_tra_peri_13 | xmidintra_tra_peri_25) + 
+         plot_layout(guides = "collect"), 
+       width = 3000, height = 2250, unit = "px")
 
 ```
 
-## Constant Interspecific Competition
-
-For easier comparison between cases with and without stage-mediated interspecific competition, this chunk can be run separately from the previous one. Make sure to change `generate_amat()` in `Functions.R` accordingly.
+# Appendix II
 
 ```{r}
 
-B = 0.225
-scal = 0.85
-xmid = 0
-mean_time = -4
-var = c(0)
+pllow_tra =
+lowintra %>% select(inv_i, lambda_ij, delta_s, season_len) %>% 
+  pivot_wider(names_from = inv_i, values_from = lambda_ij) %>% 
+  mutate(outcome = ifelse(`1`>0 & `2`>0, 3, 
+                          ifelse(`1`>0 & `2`<0, 1, 
+                                 ifelse(`1`<0 & `2`>0, 2, 4)))) %>% 
+  ggplot(aes(x = as.factor(delta_s), y = as.factor(season_len), fill = factor(outcome))) + geom_tile(color = "white") + theme_bw() + 
+  scale_x_discrete(name = "Initial stage difference", breaks = delta_s_lst, label = delta_s_lst) +
+  scale_y_discrete(name = "# Generations per season", breaks = season_lens, label = (season_lens-1)/6) +
+  # change here 
+  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme) +
+  # scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Numeric PE"), values = c("#a61b29", "#0eb0c9", "#577C8A"), guide = "none") +
+  theme(panel.grid.major = element_blank()) + ggtitle("A") +
+  theme(axis.text = element_text(size = 15), axis.ticks = element_blank(), 
+        axis.title.x = element_blank(), axis.title.y = element_text(size = 20), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20))
 
-init_pop = data.frame("N1" = c(3, 0, 0, 0, 0, 0), "N2" = c(3, 0, 0, 0, 0, 0))
-para = data.frame("para1" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6), "para2" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6))
-alpha = c(B, 0.12, 0.14)
-surv = c(0.8, 0.8)
-s = 6
-time = 310
-cycle_len = 18
-invasion_time = 1*cycle_len
-
-# Figure S7B; stage distribution
-
-xresult1 = cycles_invade(time, invasion_time, para, init_pop, alpha, gamma = G, mean_time, var, cycle_len) %>% 
-  pivot_longer(cols = N1:N2, names_to = "species", values_to = "population") %>% filter(species == "N1")
-xresult1$population = sqrt(result1$population)
-
-xresult2 = cycles_invade(time, invasion_time, para, init_pop, alpha, gamma = G, mean_time, var, cycle_len) %>% 
-  pivot_longer(cols = N1:N2, names_to = "species", values_to = "population") %>% filter(species == "N2")
-xresult2$population = sqrt(result2$population)
-
-ggplot() + aes(x = time, y = population, color = species) +
-  geom_line(data = xresult1) + aes(alpha = as.factor(stage)) + 
-  geom_line(data = xresult2) + aes(alpha = as.factor(stage)) + ggtitle("A") +
-  theme_bw()  + scale_color_manual(values = color_scheme, name = "Species", labels = c("1", "2")) + ylim(0, 3) + xlim(247, 302) +
-  geom_vline(xintercept = seq(cycle_len+1, (time%/%cycle_len)*cycle_len+1, cycle_len), color = "#577C8A", linetype = 4) +
-  theme(axis.text = element_text(size = 15), axis.title.y = element_text(size = 20), axis.title.x = element_blank(),
-        axis.ticks = element_blank(), legend.text = element_text(size = 17), legend.title = element_text(size = 20), 
-        plot.title = element_text(size = 20)) + ylab("sqrt(Population)") + 
-  scale_alpha_manual(name = "Stage", values = c(0.25, 0.4, 0.55, 0.7, 0.85, 1), labels = c("J1", "J2", "J3", "J4", "J5", "A"))
-
-# Figure S8B; interaction strengths
-
-cycles_invade(time, para, init_pop, alpha, mean_time, var, cycle_len, inv_spp = 1, record = 1) %>% 
-  replace_na(list(intra11 = 0, inter12 = 0, inter21 = 0, intra22 = 0)) %>% 
-  pivot_longer(cols = 1:4, names_to = "interaction", values_to = "strength") %>% 
-  ggplot(aes(x = time, y = strength, linetype = interaction, color = interaction)) + geom_line() + 
-  geom_vline(xintercept = seq(cycle_len+1, (time%/%cycle_len)*cycle_len+1, cycle_len), color = "#577C8A", linetype = 4) +
-  theme_bw() + xlim(49, 104) + ylim(0, 1.25) + 
-  theme(axis.text = element_text(size = 15), axis.title.y = element_text(size = 20), axis.title.x = element_blank(),
-        axis.ticks = element_blank(), legend.text = element_text(size = 17), legend.title = element_text(size = 20), 
-        plot.title = element_text(size = 20)) + ylab("Strength") + 
-  scale_linetype_manual(name = "Type", values = c(1, 1, 2, 2)) +
-  scale_color_manual(name = "Type", values = c(color_scheme[1:2], color_scheme[1:2]))
-
-# Figure S9B; population dynamics
-
-cycles_invade(time, para, init_pop, alpha, mean_time, var, cycle_len, inv_spp = 1) %>%
-  pivot_longer(cols = N1:N2, names_to = "species", values_to = "population") %>% 
-  group_by(time, species, variation) %>% summarize(sum(population)) %>% rename(population = `sum(population)`) %>% 
-  ggplot(aes(x = time, y = population, color = species)) + geom_line() + theme_bw() + 
-  scale_color_manual(values = color_scheme, name = "Species", labels = c("1", "2")) + ggtitle("A") + 
-  theme(panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank()) + ylab("Population") + 
-  scale_x_continuous(name = "Season", breaks = seq(0, time+(time/cycle_len-1), cycle_len+1), label = seq(0, time %/% cycle_len, 1)) + 
-  geom_vline(xintercept = seq(cycle_len+1, (time%/%cycle_len)*cycle_len+1, cycle_len), color = "#577C8A", linetype = 4) +
-  theme(axis.text = element_text(size = 15), axis.title.x = element_text(size = 20), axis.title.y = element_text(size = 20),
-        axis.ticks = element_blank(), legend.text = element_text(size = 17), legend.title = element_text(size = 20), 
-        plot.title = element_text(size = 20))
+plhigh_tra =
+highintra %>% select(inv_i, lambda_ij, delta_s, season_len) %>% 
+  pivot_wider(names_from = inv_i, values_from = lambda_ij) %>% 
+  mutate(outcome = ifelse(`1`>0 & `2`>0, 3, 
+                          ifelse(`1`>0 & `2`<0, 1, 
+                                 ifelse(`1`<0 & `2`>0, 2, 4)))) %>% 
+  ggplot(aes(x = as.factor(delta_s), y = as.factor(season_len), fill = factor(outcome))) + geom_tile(color = "white") + theme_bw() + 
+  scale_x_discrete(name = "Initial stage difference", breaks = delta_s_lst, label = delta_s_lst) +
+  scale_y_discrete(name = "# Generations per season", breaks = season_lens, label = (season_lens-1)/6) +
+  # change here 
+  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme, guide = "none") +
+  # scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Numeric PE"), values = c("#a61b29", "#0eb0c9", "#577C8A"), guide = "none") +
+  theme(panel.grid.major = element_blank()) + ggtitle("B") +
+  theme(axis.text = element_text(size = 15), axis.ticks = element_blank(), 
+        axis.title.x = element_text(size = 20), axis.title.y = element_text(size = 20), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20))
 
 ```
 
-# Stage-Mediated Intraspecific Competition
-
-This section analyzes the scenario that both intra- and interspecific competition coefficients change with interacting stages (see **Supporting Information**, **Section 1**) by looking at realized interaction strengths and competition coefficients. Make sure to change `generate_amat()` in `Functions.R` accordingly.
-
-## Intra- and Interspecific Competition Graphs
-
-This chunk produces **Figure S1**. If removing columns `a11` and `a22` in `compData`, this chunk can also produce **Figure 2** in main text.
+## Figure S1
 
 ```{r}
 
-timeint = seq(-5, 5, 1)
-alpha = c(0.225, 0.14, 0.16)
+ggsave("Figures/FigS1.png", plot = pllow_tra / plhigh_tra + plot_layout(guides = "collect"), 
+       width = 2250, height = 2250, unit = "px")
+
+```
+
+# Appendix III
+
+Change `generate_amat()` in [Functions.R](Functions.R) accordingly: $\alpha_{11}$, $\alpha_{22}$, $\alpha_{12}$ and $\alpha_{21}$ should all be variable (`"v"`).
+
+## Competition-phenology Function
+
+```{r}
+
+timeint = seq(-4, 4, 1)
+alpha = c(0.225, 0.10, 0.12)
 scal = 0.85
 xmid = 0
 
@@ -716,107 +689,172 @@ compData = tibble(a12 = comp_coeff(alpha[1], scal, xmid, timeint, "v"), a21 = co
                   a11 = comp_coeff(alpha[2], scal, xmid, timeint, "v"), 
                   a22 = comp_coeff(alpha[3], scal, xmid, timeint, "v"), pshift = timeint)
 
-# plcomp =
+plcomp_both =
 compData %>% pivot_longer(col = a12:a22, names_to = "coefficient", values_to = "values") %>% 
   ggplot(aes(x = pshift, y = values, color = coefficient)) + 
   geom_line(aes(linetype = coefficient)) + geom_point(aes(shape = coefficient), size = 2) + theme_bw() + 
   scale_color_manual(name = "Coefficients", values = c("#c66d76", "#6a121b", "#097180", "#65ccdc"), 
-                     labels = c(expression(paste(alpha[11])), expression(paste(alpha[12])), 
-                                expression(paste(alpha[21])), expression(paste(alpha[22])))) +
+                     labels = c(expression(paste(alpha[11])), expression(paste(beta[12])), 
+                                expression(paste(beta[21])), expression(paste(alpha[22])))) +
   scale_shape_manual(name = "Coefficients", values = c(17, 16, 16, 17), 
-                     labels = c(expression(paste(alpha[11])), expression(paste(alpha[12])), 
-                                expression(paste(alpha[21])), expression(paste(alpha[22])))) + 
+                     labels = c(expression(paste(alpha[11])), expression(paste(beta[12])), 
+                                expression(paste(beta[21])), expression(paste(alpha[22])))) + 
   scale_linetype_manual(name = "Coefficients", values = c(8, 1, 1, 8), 
-                        labels = c(expression(paste(alpha[11])), expression(paste(alpha[12])), 
-                                expression(paste(alpha[21])), expression(paste(alpha[22])))) +
-  ylab("") + scale_x_continuous(name = "Stage difference", breaks = timeint) + ylab("Competition coefficients") +
+                        labels = c(expression(paste(alpha[11])), expression(paste(beta[12])), 
+                                expression(paste(beta[21])), expression(paste(alpha[22])))) +
+  ylab("") + scale_x_continuous(name = "Initial stage difference", breaks = timeint) + ylab("Competition coefficients") +
   theme(panel.grid = element_blank()) + theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20), 
                                                     legend.text = element_text(size = 17), legend.title = element_text(size = 20))
 
-generate_amat(5, alpha)
+```
+
+## Figure S2
+
+```{r}
+
+ggsave("Figures/FigS2.png", plot = plcomp_both, 
+       width = 2000, height = 1200, unit = "px")
 
 ```
 
-## Fluctuation of Competition Coefficients
+## Invasion Analysis
 
-Following chunks produce **Figure S3** and **S4** when using different settings in `generate_amat()`.
+- Data Generation
 
-- To see interaction strengths and per-capita competition coefficients over time with stage-mediated interspecific competition (**Figure S3A**, **Figure S4A**), change `generate_amat()` to include only stage-mediated interspecific competition.
-- To see interaction strengths and per-capita competition coefficients over time with both stage-mediated intra- and interspecific competition (**Figure S3B**, **Figure S4B**), change `generate_amat()` to include both stage-mediated intra- and interspecific competition.
+```{r}
+
+delta_s_lst = seq(-4, 4, 1)
+init_pop = cbind(c(0, 0, 0, 0, 0, 0, 3), c(0, 0, 0, 0, 0, 0, 3))
+para = cbind(c(12, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8), c(12, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8))
+mu = c(0.2, 0.2)
+s = 7
+season_lens = 6*c(2, 4, 8, 16, 20)+1
+n_seasons = 50
+
+# Low intraspecific competition, symmetric
+
+vlowintra = invasion_multi(n_seasons, init_pop, para, c(B, 0.10, 0.10), delta_s_lst, var = 0, season_lens)
+
+# Mid intraspecific competition, asymmetric
+
+vmidintra = invasion_multi(n_seasons, init_pop, para, c(B, 0.10, 0.12), delta_s_lst, var = 0, season_lens)
+
+# High intraspecific competition, symmetric
+
+vhighintra = invasion_multi(n_seasons, init_pop, para, c(B, 0.12, 0.12), delta_s_lst, var = 0, season_lens)
+
+```
+
+- Visualization
+
+```{r}
+
+vpllow = 
+vlowintra %>% select(inv_i, lambda_ij, delta_s, season_len) %>% 
+  pivot_wider(names_from = inv_i, values_from = lambda_ij) %>% 
+  mutate(outcome = ifelse(`1`>0 & `2`>0, 3, 
+                          ifelse(`1`>0 & `2`<0, 1, 
+                                 ifelse(`1`<0 & `2`>0, 2, 4)))) %>% 
+  ggplot(aes(x = as.factor(delta_s), y = as.factor(season_len), fill = factor(outcome))) + geom_tile(color = "white") + theme_bw() + 
+  scale_x_discrete(name = "Initial stage difference", breaks = delta_s_lst, label = delta_s_lst) +
+  scale_y_discrete(name = "# Generations per season", breaks = season_lens, label = (season_lens-1)/6) +
+  # change here 
+  # scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme, guide = "none") +
+  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Numeric PE"), values = c("#a61b29", "#0eb0c9", "#577C8A"), guide = "none") +
+  theme(panel.grid.major = element_blank()) + ggtitle("A") +
+  theme(axis.text = element_text(size = 15), axis.ticks = element_blank(), axis.title = element_blank(),  
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20))
+
+vplmid = 
+vmidintra %>% select(inv_i, lambda_ij, delta_s, season_len) %>% 
+  pivot_wider(names_from = inv_i, values_from = lambda_ij) %>% 
+  mutate(outcome = ifelse(`1`>0 & `2`>0, 3, 
+                          ifelse(`1`>0 & `2`<0, 1, 
+                                 ifelse(`1`<0 & `2`>0, 2, 4)))) %>% 
+  ggplot(aes(x = as.factor(delta_s), y = as.factor(season_len), fill = factor(outcome))) + geom_tile(color = "white") + theme_bw() + 
+  scale_x_discrete(name = "Initial stage difference", breaks = delta_s_lst, label = delta_s_lst) +
+  scale_y_discrete(name = "# Generations per season", breaks = season_lens, label = (season_lens-1)/6) +
+  # change here 
+  # scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme, guide = "none") +
+  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Numeric PE"), values = c("#a61b29", "#0eb0c9", "#577C8A")) +
+  theme(panel.grid.major = element_blank()) + ggtitle("B") +
+  theme(axis.text = element_text(size = 15), axis.ticks = element_blank(), 
+        axis.title.x = element_blank(), axis.title.y = element_text(size = 20), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20))
+
+vplhigh = 
+vhighintra %>% select(inv_i, lambda_ij, delta_s, season_len) %>% 
+  pivot_wider(names_from = inv_i, values_from = lambda_ij) %>% 
+  mutate(outcome = ifelse(`1`>0 & `2`>0, 3, 
+                          ifelse(`1`>0 & `2`<0, 1, 
+                                 ifelse(`1`<0 & `2`>0, 2, 4)))) %>% 
+  ggplot(aes(x = as.factor(delta_s), y = as.factor(season_len), fill = factor(outcome))) + geom_tile(color = "white") + theme_bw() + 
+  scale_x_discrete(name = "Initial stage difference", breaks = delta_s_lst, label = delta_s_lst) +
+  scale_y_discrete(name = "# Generations per season", breaks = season_lens, label = (season_lens-1)/6) +
+  # change here 
+  # scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme, guide = "none") +
+  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Numeric PE"), values = c("#a61b29", "#0eb0c9", "#577C8A"), guide = "none") +
+  theme(panel.grid.major = element_blank()) + ggtitle("C") +
+  theme(axis.text = element_text(size = 15), axis.ticks = element_blank(), 
+        axis.title.y = element_blank(), axis.title.x = element_text(size = 20), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20))
+
+vpllow / vplmid / vplhigh + plot_layout(guides = "collect")
+
+```
+
+## Figure S3
+
+```{r}
+
+ggsave("Figures/FigS3.png", plot = vpllow / vplmid / vplhigh + plot_layout(guides = "collect"), 
+       width = 2250, height = 3375, unit = "px")
+
+```
+
+# Appendix IV
 
 ```{r}
 
 B = 0.225
 scal = 0.85
 xmid = 0
-mean_time = -4
-var = c(0)
 
-init_pop = data.frame("N1" = c(3, 0, 0, 0, 0, 0), "N2" = c(3, 0, 0, 0, 0, 0))
-para = data.frame("para1" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6), "para2" = c(10, 0.8, 0.8, 0.8, 0.8, 0.8, 0.6))
-alpha = c(B, 0.12, 0.14)
-surv = c(0.8, 0.8)
-s = 6
-time = 350
-cycle_len = 18
-invasion_time = 1*cycle_len
+adult_all = data.frame()
+for (ds in -(1:4)) {
+  for (season_len in c(13, 49)) {
+    adult = convert_output(seasons(20*season_len, init_pop, para, alpha, ds, var = 0, season_len)) %>% 
+            mutate(season_no = (time %/% season_len) + 1) %>% 
+            group_by(species, season_no) %>% summarize(adult = sum(`6`)) %>%
+            mutate(delta_s = ds, season_len = season_len)
+    adult_all = rbind(adult_all, adult)
+  }
+}
 
-# Interaction Strengths
-
-cycles_invade(time, para, init_pop, alpha, mean_time, var, cycle_len, inv_spp = 1, record = 1) %>% 
-  replace_na(list(intra11 = 0, inter12 = 0, inter21 = 0, intra22 = 0)) %>% 
-  pivot_longer(cols = 1:4, names_to = "interaction", values_to = "coefficients") %>% 
-  ggplot(aes(x = time, y = strength, linetype = interaction, color = interaction)) + geom_line() + 
-  geom_vline(xintercept = seq(cycle_len+1, (time%/%cycle_len)*cycle_len+1, cycle_len), color = "#577C8A", linetype = 4) +
-  theme_bw() + xlim(49, 104) + ylim(0, 1.25) + 
-  theme(axis.text = element_text(size = 15), axis.title.y = element_text(size = 20), axis.title.x = element_blank(),
-        axis.ticks = element_blank(), legend.text = element_text(size = 17), legend.title = element_text(size = 20), 
-        plot.title = element_text(size = 20)) + ylab("Strength") + 
-  scale_linetype_manual(name = "Type", values = c(1, 1, 2, 2)) +
-  scale_color_manual(name = "Type", values = c(color_scheme[1:2], color_scheme[1:2]))
-
-# Competition Coefficients
-
-cycles_invade(time, para, init_pop, alpha, mean_time, var, cycle_len, inv_spp = 1, record = 2) %>% 
-  replace_na(list(intra11 = 0, inter12 = 0, inter21 = 0, intra22 = 0)) %>% 
-  pivot_longer(cols = 1:4, names_to = "interaction", values_to = "coefficients") %>% 
-  ggplot(aes(x = time, y = coefficients, linetype = interaction, color = interaction)) + geom_line() + 
-  geom_vline(xintercept = seq(cycle_len+1, (time%/%cycle_len)*cycle_len+1, cycle_len), color = "#577C8A", linetype = 4) +
-  theme_bw() + xlim(49, 104) + ylim(0, 0.25) + 
-  theme(axis.text = element_text(size = 15), axis.title.y = element_text(size = 20), axis.title.x = element_blank(),
-        axis.ticks = element_blank(), legend.text = element_text(size = 17), legend.title = element_text(size = 20), 
-        plot.title = element_text(size = 20)) + ylab("Strength") + 
-  scale_linetype_manual(name = "Type", values = c(1, 1, 2, 2)) +
-  scale_color_manual(name = "Type", values = c(color_scheme[1:2], color_scheme[1:2]))
+plavgadp =
+adult_all %>% filter(species == 2) %>% 
+  ggplot(aes(x = season_no, y = log(adult+1), color = factor(delta_s))) + geom_line() + 
+  geom_point(size = 3, alpha = 0.5) + 
+  scale_color_manual(values = shades_kql, name = expression(paste(Delta, "s"))) + 
+  scale_shape_manual(name = "T", values = c(16, 17)) + 
+  scale_linetype_manual(name = "T", values = c(1, 8)) + ylab("log(adult population+1)") + 
+  scale_x_continuous(name = "Number of seasons", breaks = c(1, 5, 10, 15), limits = c(1, 15)) +
+  facet_grid( ~ season_len, scales = "free_y", 
+             labeller = labeller(season_len = c(`13`="Two generations", `49`="Eight generations"))) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 20), 
+        axis.ticks.y = element_blank(), plot.title = element_text(size = 20), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20), 
+        strip.text = element_text(size = 15))
 
 ```
 
-## Phase Diagrams
-
-The following chunk provides code for phase diagrams with both stage-mediated intra- and interspecific competition (see **Supporting Information, Section 1**). It produces **Figure S2**.
+## Figure S4
 
 ```{r}
 
-vimat_inv_1214 = numeric_phase_invgrowth(para, init_pop, c(B, 0.12, 0.14), deltp_lst, cycle_lens)
-vimat_inv_1818 = numeric_phase_invgrowth(para, init_pop, c(B, 0.18, 0.18), deltp_lst, cycle_lens)
-
-vimat_inv_1214 %>% melt() %>% rename(deltp = Var1, cycle_len = Var2) %>% 
-  ggplot(aes(x = deltp, y = cycle_len, fill = factor(value))) + geom_tile(color = "white") + theme_bw() + 
-  scale_x_continuous(name = "Relative arrival time", breaks = seq(1, 11, 1), label = deltp_lst) +
-  scale_y_continuous(name = "Season length", breaks = seq(1, length(cycle_lens), 1), label = cycle_lens) +
-  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Numeric PE"), values = c("#a61b29", "#0eb0c9", "#577C8A")) + 
-  theme(panel.grid.major = element_blank()) + ggtitle("A") + 
-  theme(axis.text = element_text(size = 15), axis.title.y = element_text(size = 20), 
-        axis.ticks = element_blank(), axis.title.x = element_blank(), 
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20))
-
-vimat_inv_1818 %>% melt() %>% rename(deltp = Var1, cycle_len = Var2) %>% 
-  ggplot(aes(x = deltp, y = cycle_len, fill = factor(value))) + geom_tile(color = "white") + theme_bw() + 
-  scale_x_continuous(name = "Relative arrival time", breaks = seq(1, 11, 1), label = deltp_lst) +
-  scale_y_continuous(name = "Season length", breaks = seq(1, length(cycle_lens), 1), label = cycle_lens) +
-  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "Numeric PE"), values = color_scheme) + 
-  theme(panel.grid.major = element_blank()) + ggtitle("B") + 
-  theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20), axis.ticks = element_blank(), 
-        legend.text = element_text(size = 17), legend.title = element_text(size = 20), plot.title = element_text(size = 20))
+ggsave("Figures/FigS4.png", plot = plavgadp, 
+       width = 2000, height = 1200, unit = "px")
 
 ```
