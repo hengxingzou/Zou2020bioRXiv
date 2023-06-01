@@ -3,6 +3,9 @@ library(magrittr)
 library(reshape2)
 library(patchwork)
 library(minpack.lm)
+library(doParallel)
+
+registerDoParallel(cores = 4)
 
 options(dplyr.summarise.inform = FALSE) # repress dplyr summarise() info
 
@@ -42,8 +45,9 @@ comp_coeff = function(B, scal, xmid, deltp, type) {
 #        each competition coefficients can be either variable ("v") or constant ("c") regarding delta p; this is manually changed
 #        in the function
 # Output: a square matrix with dimension 2*s by 2*s
-# Note: relative stage difference is calculated as the arrival time of species 1 minus that of species 2,
-#       i.e. the stage of species 2 minus that of species 1
+# Note: 1. relative stage difference is calculated as the arrival time of species 1 minus that of species 2,
+#          i.e. the stage of species 2 minus that of species 1
+#       2. to include adults in all density-dependence, change if ... else if statements
 
 generate_amat = function(s, alpha) {
   
@@ -58,24 +62,32 @@ generate_amat = function(s, alpha) {
       
       # Calculate intraspecific competition (alpha11)
       if (i<(s-1) & j<(s-1)) {
+      # if (i<=(s-1) & j<=(s-1)) { # include adults in density-dependence
+        
         # alpha_mat[i, j] = comp_coeff(alpha[2], scal, xmid, (j-i), "v")
         alpha_mat[i, j] = comp_coeff(alpha[2], scal, xmid, (j-i), "c")
       } 
       
       # Calculate interspecific competition (alpha12)
       else if (i<(s-1) & j>s & j<(2*s-1)) {
-        # alpha_mat[i, j] = comp_coeff(alpha[1], scal, xmid, (j-s-i), "v")
-        alpha_mat[i, j] = comp_coeff(alpha[1], scal, xmid, (j-s-i), "c")
+      # else if (i<=(s-1) & j>s & j<=(2*s-1)) { # include adults in density-dependence
+        
+        alpha_mat[i, j] = comp_coeff(alpha[1], scal, xmid, (j-s-i), "v")
+        # alpha_mat[i, j] = comp_coeff(alpha[1], scal, xmid, (j-s-i), "c")
       } 
       
       # Calculate interspecific competition (alpha21)
       else if (i>s & i<(2*s-1) & j<(s-1)) {
-        # alpha_mat[i, j] = comp_coeff(alpha[1], -scal, xmid, (i-s-j), "v")
-        alpha_mat[i, j] = comp_coeff(alpha[1], -scal, xmid, (i-s-j), "c")
+      # else if (i>s & i<=(2*s-1) & j<=(s-1)) { # include adults in density-dependence
+        
+        alpha_mat[i, j] = comp_coeff(alpha[1], -scal, xmid, (i-s-j), "v")
+        # alpha_mat[i, j] = comp_coeff(alpha[1], -scal, xmid, (i-s-j), "c")
       } 
       
       # Calculate intraspecific competition (alpha22)
-      else if (i>s & i<(2*s-1) & j>s & j<(2*s-1)){
+      else if (i>s & i<(2*s-1) & j>s & j<(2*s-1)) {
+      # else if (i>s & i<=(2*s-1) & j>s & j<=(2*s-1)) { # include adults in density-dependence
+        
         # alpha_mat[i, j] = comp_coeff(alpha[3], scal, xmid, (j-i), "v")
         alpha_mat[i, j] = comp_coeff(alpha[3], scal, xmid, (j-i), "c")
       }
@@ -105,7 +117,7 @@ generate_tmat = function(spp, alpha_mat, pop, para, mu, a, b) {
   # Extract population of species 1 and 2, and number of stages
   N1 = pop[, 1]
   N2 = pop[, 2]
-  s = dim(alpha_mat)[1]/2
+  s = nrow(pop)
   
   # Calculate intraspecific competition 11
   intra11 = alpha_mat[1:s, 1:s] %*% N1
@@ -123,12 +135,16 @@ generate_tmat = function(spp, alpha_mat, pop, para, mu, a, b) {
   if (spp == 1) {dd = intra11 + inter12} else {dd = intra22 + inter21}
   
   # Calculate transition probabilities from density dependence
+  # - if adult mortality and fecundity are NOT density-independent
   para[2:(s-1), spp] = para[2:(s-1), spp]/(1 + dd[1:(s-2)])
+  
+  # - if adult mnortality and fecundity are density-dependent
+  # para[1:s, spp] = para[1:s, spp]/(1 + dd[1:s])
   
   # Set up transition matrix
   tmat = matrix(0, s, s)
   
-  # Set up transition matrix without density dependence
+  # Set up transition matrix with density dependence
   for (i in 1:(s-2)) {
     tmat[i+1, i] = para[i+1, spp]*b
   }
@@ -140,13 +156,13 @@ generate_tmat = function(spp, alpha_mat, pop, para, mu, a, b) {
   tmat[s-1, s-1] = para[s, spp]*b
   
   # Assign emergence from dormancy
-  tmat[1, s] = a
+  tmat[1, s] = b
   
   # Assign end-of-season reproduction: adults to dormancy
   tmat[s, s-1] = para[1, spp]*(1-mu)*(1-b)
   
   # Assign remaining in dormancy 
-  tmat[s, s] = 1-a
+  tmat[s, s] = (1-b)
   
   return(tmat)
 }
@@ -161,31 +177,47 @@ generate_tmat = function(spp, alpha_mat, pop, para, mu, a, b) {
 #        season_len, season length, integer
 # Output: a sequence of time parameters a, with which 1 means emergence, of both species, in a matrix with columns being species
 
-get_emergence = function(mean_diff, var, season_len, periodic = F) {
+get_emergence = function(delta_s, lifecycle_len, season_len) {
   
-  # Get initial stage differences
-  if (periodic) {delta_s = mean_diff+var}
-  
-  else {delta_s = round(runif(1, min = mean_diff-var, max = mean_diff+var))}
-  
-  # Set up "dummy" variables for emergence: 1 means emergence; columns are species
+  # Set up the function for emergence a(t): 1 means emergence; columns are species
   a = matrix(0, nrow = season_len, ncol = 2)
+
+  # Set up the function for dormancy b(t): 1 means no dormancy, 0 means going to dormancy
+  b = matrix(rep(ifelse(1:season_len %% season_len == 0, 0, 1), times = 2), 
+             ncol = 2, byrow = F)
   
   # If both species arrive at the same time
   if (delta_s == 0) {a[1, ] = 1}
   
   # Species 1 arrives first
   else if (delta_s < 0) {
+    
+    # Species 1 emerges at the first time step
     a[1, 1] = 1
-    a[abs(delta_s)+1, 2] = 1} 
+    # Species 2 emerges late
+    a[abs(delta_s)+1, 2] = 1
+    
+    # Species 1 goes into dormancy earlier
+    b[(lifecycle_len+1):season_len, 1] = 0
+    # Species 2 emerges late
+    b[1:(abs(delta_s)), 2] = 0
+  } 
   
   # Species 2 arrives first
   else {
+    
+    # Species 2 emerges at the first time step
     a[1, 2] = 1
+    # Species 1 emerges late
     a[abs(delta_s)+1, 1] = 1
+    
+    # Species 2 goes into dormancy earlier
+    b[(lifecycle_len+1):season_len, 2] = 0
+    # Species 1 emerges late
+    b[1:(abs(delta_s)), 1] = 0
   }
   
-  return(a)
+  return(list(a, b))
 }
 
 
@@ -201,7 +233,7 @@ get_emergence = function(mean_diff, var, season_len, periodic = F) {
 #        para, baseline transition rates, in the order of fecundity (R), baseline transition rates of juvenile stages (P),
 #              and adult survival (S); matrix, where columns are species
 #        alpha, vector of three elements in the order of B (as in comp_coeff()), intraspecific competition of species 1 and 2;
-#        mean_diff, mean difference in stages, integer, of which absolute value should not exceed s-1;
+#        mean_diff (Delta s or mean Delta s), mean difference in stages, integer, of which absolute value should not exceed s-1;
 #        var, variation from mean_diff determining the lower and upper bounds of uniform distribution from which the difference in 
 #             arrival time will be drawn; when used, the sum of absolute values of mean_diff and var should not exceed s-1; integer
 #        season_len, season length, integer
@@ -210,63 +242,74 @@ get_emergence = function(mean_diff, var, season_len, periodic = F) {
 # Output: if return_all == TRUE (default), returns a list of two matrices with population dynamics: rows, stages; columns, time;
 #         if return_all == FALSE, returns the final population of the two species as a matrix, with columns being species
 
-seasons = function(time, pop, para, alpha, mean_diff, var, season_len, 
-                   return_all = T, periodic = F, coexist_time = F) {
+seasons = function(n_seasons, pop, para, alpha, mean_diff, var, n_gens, 
+                   return_all = T, periodic = F) {
   
-  # Calculate number of seasons from total time
-  n_seasons = time %/% season_len
+  # Get number of stages from initial population
+  s = nrow(pop)
   
-  # Set up matrices for recording population dynamics
-  all_pop_1 = matrix(0, ncol = time, nrow = s)
-  all_pop_2 = matrix(0, ncol = time, nrow = s)
+  # Set up lists for recording population dynamics
+  all_pop_1 = vector("list", length = n_seasons)
+  all_pop_2 = vector("list", length = n_seasons)
   
-  # Set up a vector for recording number of extinctions
-  extinction_times = c()
-  
-  # Set up "dummy" variables for seasonality; 0 means the end of the season
-  b = rep(ifelse(1:season_len %% season_len == 0, 0, 1), times = n_seasons)
-  
-  delta_s = mean_diff
-  
-  # Run simulations
-  for (t in 1:time) {
+  # Iterate through seasons
+  for (i in 1:n_seasons) {
     
-    # Determine time step within a season
-    timestep = ifelse(t %% season_len == 0, season_len, t %% season_len)
-    
-    # Regenerate emergence times at the beginning of the season
-    if (t %% season_len == 1) {
-      a_matrix = get_emergence(mean_diff, var, season_len, periodic)
-      if (periodic) {var = -var}
+    # Get initial stage differences (Delta s) for the current season
+    # - Periodic emergence
+    if (periodic) {
+      delta_s = mean_diff+var
+      var = -var
     }
     
-    # Generate transition matrices
-    tmat1 = generate_tmat(1, generate_amat(s, alpha), pop, para, mu[1], a_matrix[timestep, 1], b[t])
-    tmat2 = generate_tmat(2, generate_amat(s, alpha), pop, para, mu[2], a_matrix[timestep, 2], b[t])
+    # - Non-periodic emergence
+    else {delta_s = round(runif(1, min = mean_diff-var, max = mean_diff+var))}
     
-    # Update population
-    pop[, 1] = tmat1 %*% pop[, 1]
-    pop[, 2] = tmat2 %*% pop[, 2]
+    # Calculate season lengths
+    # - Lengths of the actual species life cycle before dormancy
+    lifecycle_len = n_gens*(s-1)
     
-    # Sample from previous states if one species extincts (<1e-6), then record this information
+    # - Extend the season to let the arriver finish development; +1 for the time step of turning dormant
+    season_len = lifecycle_len+abs(delta_s)+1
     
-    if (coexist_time & (sum(pop[, 1]) < 1e-6 | sum(pop[, 2]) < 1e-6)) {
-      # print(sum(pop[, 1]))
-      # print(c(mean_diff, season_len))
-      sampled_t = sample(1:(t-1), 1)
-      # print(sampled_t)
-      pop[, 1] = all_pop_1[, sampled_t]
-      pop[, 2] = all_pop_2[, sampled_t]
-      extinction_times = c(extinction_times, t)
+    # Get emergence and dormancy times (functions a(t) and b(t))
+    a_matrix = get_emergence(delta_s, lifecycle_len, season_len)[[1]]
+    b_matrix = get_emergence(delta_s, lifecycle_len, season_len)[[2]]
+    
+    # Set up matrices for recording population dynamics within season i
+    i_pop_1 = matrix(0, ncol = season_len, nrow = s)
+    i_pop_2 = matrix(0, ncol = season_len, nrow = s)
+    
+    # Run the model within season i
+    for (t in 1:season_len) {
+      
+      # Generate transition matrices
+      tmat1 = generate_tmat(1, generate_amat(s, alpha), pop, para, mu[1], a_matrix[t, 1], b_matrix[t, 1])
+      tmat2 = generate_tmat(2, generate_amat(s, alpha), pop, para, mu[2], a_matrix[t, 2], b_matrix[t, 2])
+      
+      # Update population
+      pop[, 1] = tmat1 %*% pop[, 1]
+      pop[, 2] = tmat2 %*% pop[, 2]
+
+      # Record new population
+      i_pop_1[, t] = pop[, 1]
+      i_pop_2[, t] = pop[, 2]
     }
     
-    # Record new population
-    all_pop_1[, t] = pop[, 1]
-    all_pop_2[, t] = pop[, 2]
+    # Record the population of season i
+    all_pop_1[[i]] = i_pop_1
+    all_pop_2[[i]] = i_pop_2
+    
   }
-  
+
   # Return all population
-  if (return_all) {return(list(all_pop_1, all_pop_2, extinction_times))}
+  if (return_all) {
+    
+    all_pop_1 = do.call(cbind, all_pop_1)
+    all_pop_2 = do.call(cbind, all_pop_2)
+    return(list(all_pop_1, all_pop_2))
+    
+  }
   
   # Return just the final population
   return(pop)
@@ -316,14 +359,11 @@ convert_output = function(all_out) {
 #        season_len, season length, integer
 # Output: stable stage distributions of both species, in a matrix with columns being species
 
-stabledist = function(time, max_time, pop, para, alpha, mean_diff, season_len, periodic = F) {
-  
-  # Set up the counter
-  loops = 1
+stabledist = function(n_seasons, max_n_seasons, pop, para, alpha, mean_diff, n_gens, periodic = F) {
   
   # Find the stable stage distribution of both species
   repeat {
-    if (time*loops > max_time) {
+    if (n_seasons > max_n_seasons) {
       
       # Warning message if result still not stable after exceeding max running time
       warning(paste(c("exceeds max running time; return value may not be stable at\ ", 
@@ -331,7 +371,7 @@ stabledist = function(time, max_time, pop, para, alpha, mean_diff, season_len, p
       break}
     
     # Run the simulation
-    new_pop = seasons(time, pop, para, alpha, mean_diff, var = 0, season_len, return_all = F, periodic = periodic)
+    new_pop = seasons(n_seasons, pop, para, alpha, mean_diff, var = 0, n_gens, return_all = F, periodic = periodic)
     
     # Compare the end population of this round to the end population of the previous round
     if (sqrt(sum((c(new_pop[, 1], new_pop[, 2])-c(pop[, 1], pop[, 2]))^2) < 1e-12)) {break}
@@ -339,8 +379,6 @@ stabledist = function(time, max_time, pop, para, alpha, mean_diff, season_len, p
     # Update population
     pop = new_pop
     
-    # Update counter
-    loops = loops + 1
   }
   
   return(new_pop)
@@ -364,64 +402,82 @@ stabledist = function(time, max_time, pop, para, alpha, mean_diff, season_len, p
 #        inv_spp, invader species, integer, 1 or 2
 # Output: long-term growth rate of invader population
 
-inv_growth = function(time, pop, para, alpha, mean_diff, var, season_len, inv_spp, return_all = F, periodic = F) {
+inv_growth = function(n_seasons, pop, para, alpha, mean_diff, var, n_gens, inv_spp, return_all = F, periodic = F) {
   
   # Set up resident and invader
   res_spp = -inv_spp + 3
   
   # Calculate the stable stage distribution of the resident only
   pop[, inv_spp] = 0
-  res = stabledist(time, max_time = 50*time, pop, para, alpha, mean_diff, season_len, periodic)
+  res = stabledist(n_seasons, max_n_seasons = 50*n_seasons, pop, para, alpha, mean_diff, n_gens, periodic)
   
   # Set up population with the invader
   inv = res
   inv[, inv_spp] = rep(1/s, s)
   
-  # Set up seasons
-  lambdas = numeric(time)
-  n_seasons = time %/% season_len
-  b = rep(ifelse(1:season_len %% season_len == 0, 0, 1), times = n_seasons)
-  
-  # # Set up emergence times for the first season
-  # a_matrix = get_emergence(mean_diff, var, season_len)
-  
   # Set intraspecific competition of the invader to 0
   alpha[inv_spp+1] = 0
   
-  for (t in 1:time) {
+  lambdas_all = numeric()
+  
+  # Iterate through seasons
+  for (i in 1:n_seasons) {
     
-    # Determine time step within a season
-    timestep = ifelse(t %% season_len == 0, season_len, t %% season_len)
-    
-    # Regenerate emergence times at the beginning of the season
-    if (t %% season_len == 1) {
-      a_matrix = get_emergence(mean_diff, var, season_len, periodic)
-      if (periodic) {var = -var}
+    # Get initial stage differences (Delta s) for the current season
+    # - Periodic emergence
+    if (periodic) {
+      delta_s = mean_diff+var
+      # print(paste0("delta s=", delta_s, "var=", var))
+      var = -var
     }
     
-    # Update resident population (doesn't contain the invader)
-    tmat_res = generate_tmat(res_spp, generate_amat(s, alpha), res, para, mu[res_spp], a_matrix[timestep, res_spp], b[timestep])
-    res[, res_spp] = tmat_res %*% res[, res_spp]
+    # - Non-periodic emergence
+    else {delta_s = round(runif(1, min = mean_diff-var, max = mean_diff+var))}
     
-    # Update invader population (contains the resident)
-    tmat_inv = generate_tmat(inv_spp, generate_amat(s, alpha), inv, para, mu[inv_spp], a_matrix[timestep, inv_spp], b[timestep])
-    inv[, inv_spp] = tmat_inv %*% inv[, inv_spp]
+    # Calculate season lengths
+    # - Lengths of the actual species life cycle before dormancy
+    lifecycle_len = n_gens*(s-1)
     
-    # Record lambda of the invader
-    lambdas[t] = sum(inv[, inv_spp])
+    # - Extend the season to let the arriver finish development; +1 for the time step of turning dormant
+    season_len = lifecycle_len+abs(delta_s)+1
+
+    # Get emergence and dormancy times (functions a(t) and b(t))
+    a_matrix = get_emergence(delta_s, lifecycle_len, season_len)[[1]]
+    b_matrix = get_emergence(delta_s, lifecycle_len, season_len)[[2]]
     
-    # Normalize invader population
-    inv[, inv_spp] = inv[, inv_spp]/sum(inv[, inv_spp])
+    lambdas = numeric(season_len)
     
-    # Update resident population to the invader
-    inv[, res_spp] = res[, res_spp]
+    # Run the model within season i
+    for (t in 1:season_len) {
+      
+      # Update resident population (doesn't contain the invader)
+      tmat_res = generate_tmat(res_spp, generate_amat(s, alpha), res, para, mu[res_spp], a_matrix[t, res_spp], b_matrix[t, res_spp])
+      res[, res_spp] = tmat_res %*% res[, res_spp]
+      
+      # Update invader population (contains the resident)
+      tmat_inv = generate_tmat(inv_spp, generate_amat(s, alpha), inv, para, mu[inv_spp], a_matrix[t, inv_spp], b_matrix[t, inv_spp])
+      inv[, inv_spp] = tmat_inv %*% inv[, inv_spp]
+      
+      # Record lambda of the invader
+      lambdas[t] = sum(inv[, inv_spp])
+      
+      # Normalize invader population
+      inv[, inv_spp] = inv[, inv_spp]/sum(inv[, inv_spp])
+      
+      # Update resident population to the invader
+      inv[, res_spp] = res[, res_spp]
+      
+    }
+    
+    lambdas_all = c(lambdas_all, lambdas)
+    
   }
   
   # Return all lambdas
-  if (return_all) {return(lambdas)}
+  if (return_all) {return(lambdas_all)}
   
   # Return just the long-term growth rate
-  return(mean(log(lambdas)))
+  return(mean(log(lambdas_all)))
 }
 
 
@@ -435,40 +491,50 @@ inv_growth = function(time, pop, para, alpha, mean_diff, var, season_len, inv_sp
 #              and adult survival (S); matrix, where columns are species
 #        alpha, vector of three elements in the order of B (as in comp_coeff()), intraspecific competition of species 1 and 2;
 #        mean_diff, mean difference in stages, integer, of which absolute value should not exceed s-1;
-#        season_len, season length, integer
+#        n_gens, season lengths, in numbers of generations, vector with integers
 #        inv_spp, invader species, integer, 1 or 2
 # Output: a tibble of long-term growth rates of invader population
 
-invasion_multi = function(n_seasons, init_pop, para, alpha, delta_s_lst, var = 0, season_lens, seed = 1, periodic = F) {
+invasion_multi = function(n_seasons, init_pop, para, alpha, mean_diff_lst, var = 0, n_gens_lst, seed = 1, periodic = F) {
   
-  # Set up data frame for storing values
-  all_out = tibble()
-  
-  for (ds in delta_s_lst) {
-    for (len in season_lens) {
-      out = foreach (inv_spp = 1:2, .combine = rbind) %dopar% {
+  # Loop through season lengths
+  all_out = foreach(n_gens = n_gens_lst, .combine = rbind) %dopar% {
+
+    # Delta s longer than one generation
+    # mean_diff_lst = round(c(-0.33333, -0.25, -0.16667, -0.08333, 0, 0.08333, 0.16667, 0.25, 0.33333)*n_gens*(s-1))
+
+    out = foreach(md = mean_diff_lst, .combine = rbind) %dopar% {
+      
+      values = tibble()
+      for (inv_spp in 1:2) {
+        
+        # Set seed before calculating each lambda to make sure the arrival times are the same for each pair
+        # Not working -- not included in the current manuscript
+        # set.seed(seed)
         
         # Calculate invasion growth of species i when species j is at equilibrium
-        # Set seed before calculating each lambda to make sure the arrival times are the same for each pair
-        set.seed(seed)
-        lambda_ij = inv_growth(n_seasons*len, init_pop, para, alpha, ds, var, len, inv_spp, periodic = periodic)
+        lambda_ij = inv_growth(n_seasons, init_pop, para, alpha, md, var, n_gens, inv_spp, periodic = periodic)
         
         # Calculate the invader's (species i's) growth rate without the resident (species j)
         pop = init_pop
         pop[7, -inv_spp] = 0
-        lambda_i = inv_growth(n_seasons*len, pop, para, alpha, ds, var, len, inv_spp, periodic = periodic)
+        lambda_i = inv_growth(n_seasons, pop, para, alpha, md, var, n_gens, inv_spp, periodic = periodic)
         
-        values = data.frame(inv_i = inv_spp, res_j = -inv_spp+3, 
-                            lambda_ij = lambda_ij, lambda_i = lambda_i,
-                            sensitivity = (lambda_i-lambda_ij)/lambda_i,
-                            delta_s = ds, season_len = len)
+        values = rbind(values, tibble(inv_i = inv_spp, res_j = -inv_spp+3, 
+                                      lambda_ij = lambda_ij, lambda_i = lambda_i,
+                                      sensitivity = (lambda_i-lambda_ij)/lambda_i,
+                                      delta_s = md, n_gens = n_gens))
       }
       
-      all_out = bind_rows(all_out, out)
-      
-      # Use a different seed to make sure the arrival times are different for the next pair
-      set.seed(NULL)
+      values
     }
+    
+    # Use a different seed to make sure the arrival times are different for the next pair
+    # Not working -- not included in the current manuscript
+    # set.seed(NULL)
+    
+    out
+    
   }
   
   return(all_out)
@@ -493,7 +559,7 @@ generate_baseplot = function(ND_min, ND_max, RFD_min, RFD_max, alpha_val = 0.25)
     geom_ribbon(data = nd_rfd_line %>% filter(type == "lower", ND >= 0), 
                 aes(x = ND, ymin = log10(RFD), ymax = log10(1/(1-ND))), fill = "#ECB88A", alpha = alpha_val) +
     
-    # Numeric PE
+    # Frequency-Dependent PE
     geom_ribbon(data = nd_rfd_line %>% filter(type == "upper", ND <= 0), 
                 aes(x = ND, ymin = log10(RFD), ymax = log10(1-ND)), fill = "#577C8A", alpha = alpha_val) +
     
