@@ -68,7 +68,7 @@ generate_amat = function(s, alpha) {
         alpha_mat[i, j] = comp_coeff(alpha[2], scal, xmid, (j-i), "c")
       } 
       
-      # Calculate interspecific competition (alpha12)
+      # Calculate interspecific competition (beta12)
       else if (i<(s-1) & j>s & j<(2*s-1)) {
       # else if (i<=(s-1) & j>s & j<=(2*s-1)) { # include adults in density-dependence
         
@@ -76,7 +76,7 @@ generate_amat = function(s, alpha) {
         # alpha_mat[i, j] = comp_coeff(alpha[1], scal, xmid, (j-s-i), "c")
       } 
       
-      # Calculate interspecific competition (alpha21)
+      # Calculate interspecific competition (beta21)
       else if (i>s & i<(2*s-1) & j<(s-1)) {
       # else if (i>s & i<=(2*s-1) & j<=(s-1)) { # include adults in density-dependence
         
