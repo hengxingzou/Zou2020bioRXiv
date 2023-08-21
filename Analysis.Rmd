@@ -892,3 +892,90 @@ ggsave("Figures/FigS5.png", plot = vpllow / vplmid / vplhigh + plot_layout(guide
        width = 2250, height = 3375, unit = "px")
 
 ```
+
+## Recreating Main Text Phase Diagram
+
+- Data Generation
+
+Needs to change `scal` to `5*scal` in line 67 and 91 in `Functions.R`
+
+```{r}
+
+modified_midintra = invasion_multi(n_seasons, init_pop, para, c(B, 0.12, 0.14), delta_s_lst, var = 0, n_gens_lst)
+
+```
+
+- Competition-phenology Function
+
+```{r}
+
+delta_s_lst = seq(-4, 4, 1)
+alpha = c(0.225, 0.12, 0.14)
+scal = 0.85
+xmid = 0
+
+compData = tibble(a12 = comp_coeff(alpha[1], scal, xmid, delta_s_lst, "v"), a21 = comp_coeff(alpha[1], -scal, xmid, delta_s_lst, "v"), 
+                  a11 = comp_coeff(alpha[2], 5*scal, xmid, delta_s_lst, "v"), 
+                  a22 = comp_coeff(alpha[3], 5*scal, xmid, delta_s_lst, "v"), pshift = delta_s_lst)
+
+plcomp_both_mod =
+compData %>% pivot_longer(col = a12:a22, names_to = "coefficient", values_to = "values") %>% 
+  ggplot(aes(x = pshift, y = values, color = coefficient)) + 
+  geom_line(aes(linetype = coefficient)) + geom_point(aes(shape = coefficient), size = 2) + 
+  theme_bw() + 
+  scale_color_manual(name = "Coefficients", values = c("#c66d76", "#6a121b", "#097180", "#65ccdc"), 
+                     labels = c(expression(paste(alpha[11])), expression(paste(beta[12])), 
+                                expression(paste(beta[21])), expression(paste(alpha[22])))) +
+  scale_shape_manual(name = "Coefficients", values = c(17, 16, 16, 17), 
+                     labels = c(expression(paste(alpha[11])), expression(paste(beta[12])), 
+                                expression(paste(beta[21])), expression(paste(alpha[22])))) + 
+  scale_linetype_manual(name = "Coefficients", values = c(8, 1, 1, 8), 
+                        labels = c(expression(paste(alpha[11])), expression(paste(beta[12])), 
+                                expression(paste(beta[21])), expression(paste(alpha[22])))) +
+  ylab("") + 
+  scale_x_continuous(name = expression(paste("Stage difference (", l-k, ")")), breaks = delta_s_lst) +
+  ylab("Competition coefficients") +
+  theme(panel.grid = element_blank()) + theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20), 
+                                                    legend.text = element_text(size = 17), legend.title = element_text(size = 20))
+
+
+```
+
+- Plotting
+
+```{r}
+
+plmodif_tra =
+modified_midintra %>% select(inv_i, lambda_ij, delta_s, n_gens) %>% 
+  pivot_wider(names_from = inv_i, values_from = lambda_ij) %>% 
+  mutate(outcome = case_when(`1` > 0 & `2` > 0 ~ 3, 
+                             `1` > 0 & `2` < 0 ~ 1, 
+                             `1` < 0 & `2` > 0 ~ 2, 
+                             `1` < 0 & `2` < 0 ~ 4)) %>% 
+  ggplot(aes(x = as.factor(delta_s), y = as.factor(n_gens), fill = factor(outcome))) + geom_tile(color = "white") + theme_bw() + 
+  scale_x_discrete(name = expression(paste(Delta, "s")), breaks = delta_s_lst, label = delta_s_lst) + 
+  scale_y_discrete(name = "# Generations per season", breaks = n_gens_lst, label = n_gens_lst) +
+  geom_rect(aes(xmin = 2.5, ymin = 0.5, xmax = 7.5, ymax = 5.5), color = "black", alpha = 0, size = 1) + 
+  # change here; for periodic, guide goes here
+  scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "Coexistence", "PFD"), values = color_scheme) +
+  # scale_fill_manual(name = "Outcome", labels = c("1 wins", "2 wins", "PFD"), values = c("#a61b29", "#0eb0c9", "#577C8A"), guide = "none") +
+  theme(panel.grid.major = element_blank()) + 
+  theme(axis.text = element_text(size = 15), axis.ticks = element_blank(), 
+        axis.title.x = element_text(size = 20), axis.title.y = element_text(size = 20), 
+        legend.text = element_text(size = 17), legend.title = element_text(size = 20), 
+        plot.title = element_text(size = 20))
+
+```
+
+## Figure S6, S7
+
+```{r}
+
+ggsave("Figures/FigS6.png", plot = plcomp_both, 
+       width = 2000, height = 1200, unit = "px")
+
+ggsave("Figures/FigS7.png", plot = plmodif_tra, 
+       width = 2000, height = 1125, unit = "px")
+
+```
+
