@@ -44,4 +44,4 @@ All above data frames have the following columns:
 - Open `Analysis.Rmd`, then load `SavedEnviron.RData`.
 - Follow specific instructions in `Analysis.Rmd` to generate figures in the main text, or change model parameters to produce figures in the appendix.
 
-Latest release: version Jan 2023; uploaded Aug 21 2023
+Latest release: version Jan 2023; uploaded Sep 12 2023
