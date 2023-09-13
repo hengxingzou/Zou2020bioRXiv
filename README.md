@@ -23,10 +23,10 @@ All simulations were run in R version 4.2.1.
 - **Both stage-mediated intra- and interspecific competition (3 data frames)**: `vlowintra`, `vmidintra` and `vhighintra`.
 - **Periodic arrival time with stage-mediated interspecific competition (1 data frame)**: `var2`.
 - **Periodic arrival time without stage-mediated interspecific competition (1 data frame)**: `xvar2`.
-- **Simulation with $\Delta s>5$, with stage-mediated interspecific competition (1 data frame) (1 data frame)**: `long_midintra`.
-- **Simulation with $\Delta s>5$, without stage-mediated interspecific competition (1 data frame) (1 data frame)**: `xlong_midintra`.
-- **Simulation with adult density dependence, with stage-mediated interspecific competition (1 data frame) (1 data frame)**: `adu_dd_midintra`.
-- **Simulation with adult density dependence, without stage-mediated interspecific competition (1 data frame) (1 data frame)**: `xadu_dd_midintra`.
+- **Simulation with $\Delta s>5$, with stage-mediated interspecific competition (1 data frame)**: `long_midintra`.
+- **Simulation with $\Delta s>5$, without stage-mediated interspecific competition (1 data frame)**: `xlong_midintra`.
+- **Simulation with adult density dependence, with stage-mediated interspecific competition (1 data frame)**: `adu_dd_midintra`.
+- **Simulation with adult density dependence, without stage-mediated interspecific competition (1 data frame)**: `xadu_dd_midintra`.
 
 All above data frames have the following columns:
 
