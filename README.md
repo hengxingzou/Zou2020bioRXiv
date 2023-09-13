@@ -28,6 +28,16 @@ All simulations were run in R version 4.2.1.
 - **Simulation with adult density dependence, with stage-mediated interspecific competition (1 data frame) (1 data frame)**: `adu_dd_midintra`.
 - **Simulation with adult density dependence, without stage-mediated interspecific competition (1 data frame) (1 data frame)**: `xadu_dd_midintra`.
 
+All above data frames have the following columns:
+
+- `inv_i`: identify of invading species.
+- `res_j`: identify of resident species
+- `lambda_ij`: long-term growth rate of species $i$ when invading the stable stage distribution of species $j$.
+- `lambda_i`: long-term growth rate of species $i$ in monoculture
+- `sensitivity`: sensitivity to competition of species $i$, calculated as in Eqn. 2.4.
+- `delta_s`: the initial stage difference of the simulation.
+- `n_gens`: the season length of the simulation.
+
 # Reproducing Figures
 
 - Make sure all files are under the same directory.
