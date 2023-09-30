@@ -1,6 +1,6 @@
 This repository contains public code for the manuscript:
 
-Zou, Heng-Xing, SJ Schreiber, and Volker HW Rudolf. "Stage-mediated priority effects and season lengths shape long-term competition dynamics." In press, *Proceedings of Royal Society B: Biological Sciences* [https://royalsocietypublishing.org/doi/full/10.1098/rspb.2023.1217](https://royalsocietypublishing.org/doi/full/10.1098/rspb.2023.1217)
+Zou, Heng-Xing, SJ Schreiber, and Volker HW Rudolf. 2023. "Stage-mediated priority effects and season lengths shape long-term competition dynamics." In press, *Proceedings of Royal Society B: Biological Sciences* [https://royalsocietypublishing.org/doi/full/10.1098/rspb.2023.1217](https://royalsocietypublishing.org/doi/full/10.1098/rspb.2023.1217)
 
 For any questions, please [contact Heng-Xing Zou](hengxingzou@rice.edu)
 
